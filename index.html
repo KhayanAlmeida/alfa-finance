@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Alfa Finance - Controle Financeiro</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -123,7 +124,7 @@ body {
 .btn-success:hover { background: #047857; transform: translateY(-2px); }
 .btn-secondary { background: #6b7280; color: white; }
 .btn-secondary:hover { background: #4b5563; transform: translateY(-2px); }
-.btn-small { padding: 5px 10px; font-size: 11px; }
+.btn-small { padding: 8px 12px; font-size: 11px; }
 
 .tabs {
   display: flex;
@@ -268,6 +269,8 @@ tr:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .card-terreno .total {
@@ -295,6 +298,16 @@ tr:hover {
 .terreno-acoes {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+.terreno-botoes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #2a4a3a;
 }
 
 .gestao-terrenos {
@@ -322,7 +335,7 @@ tr:hover {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.9);
+  background: rgba(0,0,0,0.95);
   z-index: 1000;
   align-items: center;
   justify-content: center;
@@ -528,6 +541,7 @@ tr:hover {
   color: #aaa;
 }
 
+/* Melhorias para celular */
 @media (max-width: 768px) {
   .container {
     padding: 12px;
@@ -543,18 +557,36 @@ tr:hover {
   }
   
   .btn {
-    padding: 8px 14px;
+    padding: 10px 14px;
     font-size: 12px;
+    flex: 1;
+    justify-content: center;
+  }
+  
+  .acoes {
+    flex-direction: column;
+  }
+  
+  .acoes .btn {
+    width: 100%;
   }
   
   .tab {
-    padding: 8px 14px;
+    padding: 8px 12px;
     font-size: 12px;
+    flex: 1;
+    text-align: center;
+  }
+  
+  .tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
   
   th, td {
     padding: 8px;
-    font-size: 11px;
+    font-size: 10px;
   }
   
   .terrenos-grid {
@@ -568,6 +600,44 @@ tr:hover {
   
   .filtro-input, .filtro-select {
     width: 100%;
+  }
+  
+  .card-terreno h3 {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .terreno-acoes {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .terreno-botoes {
+    flex-direction: column;
+  }
+  
+  .terreno-botoes .btn-small {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .btn-small {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  
+  .modal-content {
+    max-width: 95%;
+    margin: 10px;
+  }
+  
+  .modal-footer {
+    flex-direction: column;
+  }
+  
+  .modal-footer .btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 
@@ -953,7 +1023,6 @@ async function salvarTudo() {
 function abrirModalFinalizar(terreno) {
   terrenoFinalizando = terreno;
   
-  // Calcular resumo do terreno
   const transacoesTerreno = transacoes.filter(t => t.terreno === terreno);
   const totalEntradas = transacoesTerreno.filter(t => t.tipo === 'entrada').reduce((sum, t) => sum + t.valor, 0);
   const totalSaidas = transacoesTerreno.filter(t => t.tipo === 'saida').reduce((sum, t) => sum + t.valor, 0);
@@ -985,7 +1054,6 @@ async function confirmarFinalizar() {
   const totalSaidas = transacoesTerreno.filter(t => t.tipo === 'saida').reduce((sum, t) => sum + t.valor, 0);
   const lucro = totalEntradas - totalSaidas;
   
-  // Criar registro de serviço finalizado
   const servicoFinalizado = {
     id: Date.now(),
     terreno: terrenoFinalizando,
@@ -995,16 +1063,12 @@ async function confirmarFinalizar() {
     lucro: lucro,
     resultado: lucro >= 0 ? 'lucro' : 'prejuizo',
     observacoes: observacoes,
-    transacoes: transacoesTerreno // Salvar cópia das transações
+    transacoes: transacoesTerreno
   };
   
-  // Adicionar ao histórico
   historicoServicos.push(servicoFinalizado);
-  
-  // Remover todas as transações do terreno
   transacoes = transacoes.filter(t => t.terreno !== terrenoFinalizando);
   
-  // Salvar tudo no Firebase
   await salvarTudo();
   
   fecharModalFinalizar();
@@ -1019,7 +1083,6 @@ function fecharModalFinalizar() {
   document.getElementById('modalFinalizar').classList.remove('show');
 }
 
-// Ver histórico do terreno
 function verHistorico(terreno) {
   const historicoTerreno = historicoServicos.filter(h => h.terreno === terreno).sort((a,b) => b.dataFinalizacao.localeCompare(a.dataFinalizacao));
   
@@ -1027,7 +1090,7 @@ function verHistorico(terreno) {
     document.getElementById('historicoConteudo').innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">📭 Nenhum serviço finalizado para este terreno ainda.</div>';
   } else {
     let html = '';
-    historicoTerreno.forEach((h, index) => {
+    historicoTerreno.forEach((h) => {
       html += `
         <div class="historico-item">
           <div class="data">📅 ${formatarData(h.dataFinalizacao)}</div>
@@ -1235,8 +1298,8 @@ function renderizarTerrenos() {
         <h3>
           🏘️ ${terreno}
           <div class="terreno-acoes">
-            <button class="btn-edit btn-small" onclick="abrirModalEditarTerreno('${terreno.replace(/'/g, "\\'")}')">✏️</button>
-            <button class="btn-delete btn-small" onclick="excluirTerreno('${terreno.replace(/'/g, "\\'")}')">🗑️</button>
+            <button class="btn-edit btn-small" onclick="abrirModalEditarTerreno('${terreno.replace(/'/g, "\\'")}')">✏️ Editar</button>
+            <button class="btn-delete btn-small" onclick="excluirTerreno('${terreno.replace(/'/g, "\\'")}')">🗑️ Excluir</button>
           </div>
         </h3>
         <div class="total ${total >= 0 ? 'positivo' : 'negativo'}">
@@ -1246,10 +1309,10 @@ function renderizarTerrenos() {
           <span>📈 Entradas: R$ ${entradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
           <span>📉 Saídas: R$ ${saidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
         </div>
-        <div class="detalhes" style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+        <div class="terreno-botoes">
           <button class="btn-info btn-small" onclick="filtrarPorTerreno('${terreno.replace(/'/g, "\\'")}')">🔍 Ver transações</button>
-          <button class="btn-success btn-small" onclick="verHistorico('${terreno.replace(/'/g, "\\'")}')">📜 Histórico</button>
-          ${temTransacoes ? `<button class="btn-warning btn-small" onclick="abrirModalFinalizar('${terreno.replace(/'/g, "\\'")}')">🏁 Finalizar serviço</button>` : '<span style="color: #666; font-size: 10px;">✅ Sem transações ativas</span>'}
+          <button class="btn-success btn-small" onclick="verHistorico('${terreno.replace(/'/g, "\\'")}')">📜 Ver Histórico</button>
+          ${temTransacoes ? `<button class="btn-warning btn-small" onclick="abrirModalFinalizar('${terreno.replace(/'/g, "\\'")}')">🏁 Finalizar serviço</button>` : '<span style="color: #666; font-size: 11px; padding: 8px;">✅ Sem transações ativas</span>'}
         </div>
       </div>
     `;
@@ -1315,7 +1378,7 @@ function renderizarTabela() {
         <button class="btn-edit" onclick="editarTransacao(${t.id})">✏️</button>
         <button class="btn-delete" onclick="deletarTransacao(${t.id})">🗑️</button>
       </td>
-    </tr>
+     </tr>
   `).join('');
 }
 
