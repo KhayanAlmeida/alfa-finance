@@ -119,6 +119,8 @@ body {
 .btn-warning:hover { background: #b45309; transform: translateY(-2px); }
 .btn-info { background: #0284c7; color: white; }
 .btn-info:hover { background: #0369a1; transform: translateY(-2px); }
+.btn-success { background: #059669; color: white; }
+.btn-success:hover { background: #047857; transform: translateY(-2px); }
 .btn-secondary { background: #6b7280; color: white; }
 .btn-secondary:hover { background: #4b5563; transform: translateY(-2px); }
 .btn-small { padding: 5px 10px; font-size: 11px; }
@@ -240,7 +242,7 @@ tr:hover {
 
 .terrenos-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 15px;
   margin-top: 20px;
 }
@@ -476,6 +478,56 @@ tr:hover {
   to { transform: rotate(360deg); }
 }
 
+.resumo-final {
+  background: linear-gradient(135deg, #0f2a1f, #1a3a2a);
+  border-radius: 12px;
+  padding: 15px;
+  margin: 15px 0;
+  text-align: center;
+}
+
+.resumo-final h4 {
+  color: #81c784;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.resumo-final .lucro {
+  font-size: 24px;
+  font-weight: 800;
+  color: #4ade80;
+}
+
+.resumo-final .prejuizo {
+  font-size: 24px;
+  font-weight: 800;
+  color: #f87171;
+}
+
+.historico-container {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 15px;
+}
+
+.historico-item {
+  background: #0f2a1f;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+
+.historico-item .data {
+  color: #81c784;
+  font-weight: 600;
+}
+
+.historico-item .resumo {
+  margin-top: 5px;
+  color: #aaa;
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 12px;
@@ -545,7 +597,7 @@ tr:hover {
     <span>💰</span>
     Alfa Finance
   </h1>
-  <p>Controle Financeiro por Terreno - Dados na Nuvem</p>
+  <p>Controle Financeiro por Terreno - Com Finalização de Serviço</p>
 </div>
 
 <div class="container">
@@ -684,6 +736,36 @@ tr:hover {
   </div>
 </div>
 
+<!-- Modal Finalizar Serviço -->
+<div id="modalFinalizar" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>🏁 Finalizar Serviço</h2>
+      <button class="close-modal" id="closeFinalizarBtn">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="finalizarResumo"></div>
+      <div class="form-group">
+        <label>📝 Observações finais (opcional)</label>
+        <textarea id="observacoesFinais" placeholder="Observações sobre o serviço finalizado..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>⚠️ ATENÇÃO: Esta ação irá:</label>
+        <ul style="color: #aaa; font-size: 12px; margin-top: 5px; padding-left: 20px;">
+          <li>📊 Gerar um resumo final do serviço</li>
+          <li>💾 Salvar no histórico do terreno</li>
+          <li>🔄 Reiniciar todas as transações do terreno</li>
+          <li>📈 Começar um novo ciclo do zero</li>
+        </ul>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btnCancelarFinalizar">Cancelar</button>
+      <button class="btn btn-success" id="btnConfirmarFinalizar">✅ Finalizar e Reiniciar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Editar Terreno -->
 <div id="modalEditarTerreno" class="modal">
   <div class="modal-content">
@@ -705,6 +787,22 @@ tr:hover {
   </div>
 </div>
 
+<!-- Modal Histórico -->
+<div id="modalHistorico" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>📜 Histórico do Terreno</h2>
+      <button class="close-modal" id="closeHistoricoBtn">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="historicoConteudo"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btnFecharHistorico">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ==================== FIREBASE CONFIG ====================
 const firebaseConfig = {
@@ -722,11 +820,13 @@ const database = firebase.database();
 // ==================== VARIÁVEIS GLOBAIS ====================
 let transacoes = [];
 let terrenos = [];
+let historicoServicos = [];
 let tabAtual = 'entradas';
 let filtroMes = '';
 let filtroCategoria = '';
 let filtroTerreno = '';
 let editandoId = null;
+let terrenoFinalizando = null;
 
 // ==================== FUNÇÕES FIREBASE ====================
 
@@ -755,6 +855,16 @@ async function salvarTerrenosFirebase() {
     return true;
   } catch (error) {
     console.error('Erro ao salvar terrenos:', error);
+    return false;
+  }
+}
+
+async function salvarHistoricoFirebase() {
+  try {
+    await database.ref('historico').set(historicoServicos);
+    return true;
+  } catch (error) {
+    console.error('Erro ao salvar histórico:', error);
     return false;
   }
 }
@@ -789,13 +899,29 @@ async function carregarTerrenosFirebase() {
   }
 }
 
+async function carregarHistoricoFirebase() {
+  try {
+    const snapshot = await database.ref('historico').once('value');
+    if (snapshot.exists()) {
+      historicoServicos = snapshot.val();
+    } else {
+      historicoServicos = [];
+    }
+    return true;
+  } catch (error) {
+    console.error('Erro ao carregar histórico:', error);
+    return false;
+  }
+}
+
 async function carregarTodosDados() {
   showLoading(true);
   document.getElementById('storageStatus').innerHTML = '☁️ Firebase: Carregando dados...';
   
   await Promise.all([
     carregarTransacoesFirebase(),
-    carregarTerrenosFirebase()
+    carregarTerrenosFirebase(),
+    carregarHistoricoFirebase()
   ]);
   
   atualizarTudo();
@@ -807,13 +933,12 @@ async function carregarTodosDados() {
   }, 3000);
 }
 
-// ==================== FUNÇÕES DO SISTEMA ====================
-
 async function salvarTudo() {
   showLoading(true);
   await Promise.all([
     salvarTransacoesFirebase(),
-    salvarTerrenosFirebase()
+    salvarTerrenosFirebase(),
+    salvarHistoricoFirebase()
   ]);
   showLoading(false);
   
@@ -823,8 +948,113 @@ async function salvarTudo() {
   }, 2000);
 }
 
-// Adicionar terreno
-async function adicionarTerreno() {
+// ==================== FUNÇÕES DE FINALIZAÇÃO ====================
+
+function abrirModalFinalizar(terreno) {
+  terrenoFinalizando = terreno;
+  
+  // Calcular resumo do terreno
+  const transacoesTerreno = transacoes.filter(t => t.terreno === terreno);
+  const totalEntradas = transacoesTerreno.filter(t => t.tipo === 'entrada').reduce((sum, t) => sum + t.valor, 0);
+  const totalSaidas = transacoesTerreno.filter(t => t.tipo === 'saida').reduce((sum, t) => sum + t.valor, 0);
+  const lucro = totalEntradas - totalSaidas;
+  
+  const resumoHtml = `
+    <div class="resumo-final">
+      <h4>📊 Resumo do Serviço - ${terreno}</h4>
+      <div>📈 Total de Entradas: <strong style="color: #4ade80;">R$ ${totalEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></div>
+      <div>📉 Total de Saídas: <strong style="color: #f87171;">R$ ${totalSaidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></div>
+      <div style="margin-top: 10px;">💰 <strong>RESULTADO:</strong></div>
+      <div class="${lucro >= 0 ? 'lucro' : 'prejuizo'}">
+        ${lucro >= 0 ? '✅ LUCRO' : '❌ PREJUÍZO'} de R$ ${Math.abs(lucro).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('finalizarResumo').innerHTML = resumoHtml;
+  document.getElementById('observacoesFinais').value = '';
+  document.getElementById('modalFinalizar').classList.add('show');
+}
+
+async function confirmarFinalizar() {
+  if (!terrenoFinalizando) return;
+  
+  const observacoes = document.getElementById('observacoesFinais').value;
+  const transacoesTerreno = transacoes.filter(t => t.terreno === terrenoFinalizando);
+  const totalEntradas = transacoesTerreno.filter(t => t.tipo === 'entrada').reduce((sum, t) => sum + t.valor, 0);
+  const totalSaidas = transacoesTerreno.filter(t => t.tipo === 'saida').reduce((sum, t) => sum + t.valor, 0);
+  const lucro = totalEntradas - totalSaidas;
+  
+  // Criar registro de serviço finalizado
+  const servicoFinalizado = {
+    id: Date.now(),
+    terreno: terrenoFinalizando,
+    dataFinalizacao: new Date().toISOString().split('T')[0],
+    totalEntradas: totalEntradas,
+    totalSaidas: totalSaidas,
+    lucro: lucro,
+    resultado: lucro >= 0 ? 'lucro' : 'prejuizo',
+    observacoes: observacoes,
+    transacoes: transacoesTerreno // Salvar cópia das transações
+  };
+  
+  // Adicionar ao histórico
+  historicoServicos.push(servicoFinalizado);
+  
+  // Remover todas as transações do terreno
+  transacoes = transacoes.filter(t => t.terreno !== terrenoFinalizando);
+  
+  // Salvar tudo no Firebase
+  await salvarTudo();
+  
+  fecharModalFinalizar();
+  atualizarTudo();
+  
+  alert(`✅ Serviço do terreno "${terrenoFinalizando}" finalizado com sucesso!\n\n📊 Resultado: ${lucro >= 0 ? 'LUCRO' : 'PREJUÍZO'} de R$ ${Math.abs(lucro).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\nO terreno foi reiniciado e está pronto para um novo ciclo!`);
+  
+  terrenoFinalizando = null;
+}
+
+function fecharModalFinalizar() {
+  document.getElementById('modalFinalizar').classList.remove('show');
+}
+
+// Ver histórico do terreno
+function verHistorico(terreno) {
+  const historicoTerreno = historicoServicos.filter(h => h.terreno === terreno).sort((a,b) => b.dataFinalizacao.localeCompare(a.dataFinalizacao));
+  
+  if (historicoTerreno.length === 0) {
+    document.getElementById('historicoConteudo').innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">📭 Nenhum serviço finalizado para este terreno ainda.</div>';
+  } else {
+    let html = '';
+    historicoTerreno.forEach((h, index) => {
+      html += `
+        <div class="historico-item">
+          <div class="data">📅 ${formatarData(h.dataFinalizacao)}</div>
+          <div class="resumo">
+            📈 Entradas: R$ ${h.totalEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br>
+            📉 Saídas: R$ ${h.totalSaidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br>
+            <strong style="color: ${h.resultado === 'lucro' ? '#4ade80' : '#f87171'}">
+              ${h.resultado === 'lucro' ? '✅ LUCRO' : '❌ PREJUÍZO'}: R$ ${Math.abs(h.lucro).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </strong>
+            ${h.observacoes ? `<br>📝 Obs: ${h.observacoes}` : ''}
+          </div>
+        </div>
+      `;
+    });
+    document.getElementById('historicoConteudo').innerHTML = html;
+  }
+  
+  document.getElementById('modalHistorico').classList.add('show');
+}
+
+function fecharModalHistorico() {
+  document.getElementById('modalHistorico').classList.remove('show');
+}
+
+// ==================== FUNÇÕES DO SISTEMA ====================
+
+function adicionarTerreno() {
   const nome = document.getElementById('novoTerrenoNome').value.trim();
   if (!nome) {
     alert('Digite o nome do terreno!');
@@ -835,14 +1065,13 @@ async function adicionarTerreno() {
     return;
   }
   terrenos.push(nome);
-  await salvarTerrenosFirebase();
+  salvarTerrenosFirebase();
   atualizarSelectTerrenos();
   renderizarTerrenos();
   document.getElementById('novoTerrenoNome').value = '';
   alert(`✅ Terreno "${nome}" adicionado!`);
 }
 
-// Editar terreno
 function abrirModalEditarTerreno(terrenoAntigo) {
   document.getElementById('terrenoEditandoOriginal').value = terrenoAntigo;
   document.getElementById('terrenoEditandoNome').value = terrenoAntigo;
@@ -868,7 +1097,6 @@ async function salvarEdicaoTerreno() {
     return;
   }
   
-  // Atualizar o nome do terreno nas transações
   transacoes = transacoes.map(t => {
     if (t.terreno === terrenoAntigo) {
       return { ...t, terreno: terrenoNovo };
@@ -876,7 +1104,13 @@ async function salvarEdicaoTerreno() {
     return t;
   });
   
-  // Atualizar a lista de terrenos
+  historicoServicos = historicoServicos.map(h => {
+    if (h.terreno === terrenoAntigo) {
+      return { ...h, terreno: terrenoNovo };
+    }
+    return h;
+  });
+  
   const index = terrenos.indexOf(terrenoAntigo);
   if (index !== -1) {
     terrenos[index] = terrenoNovo;
@@ -890,27 +1124,23 @@ async function salvarEdicaoTerreno() {
   alert(`✅ Terreno "${terrenoAntigo}" renomeado para "${terrenoNovo}"!`);
 }
 
-// Excluir terreno
 async function excluirTerreno(terreno) {
-  // Verificar se há transações associadas
   const transacoesAssociadas = transacoes.filter(t => t.terreno === terreno);
+  const historicoAssociado = historicoServicos.filter(h => h.terreno === terreno);
   
   let mensagem = `Tem certeza que deseja excluir o terreno "${terreno}"?`;
   if (transacoesAssociadas.length > 0) {
-    mensagem += `\n\n⚠️ ATENÇÃO: Existem ${transacoesAssociadas.length} transações associadas a este terreno que também serão excluídas!`;
+    mensagem += `\n\n⚠️ ATENÇÃO: Existem ${transacoesAssociadas.length} transações e ${historicoAssociado.length} registros de histórico associados a este terreno que também serão excluídos!`;
   }
   
   if (!confirm(mensagem)) return;
   
-  // Remover transações associadas
   transacoes = transacoes.filter(t => t.terreno !== terreno);
-  
-  // Remover terreno da lista
+  historicoServicos = historicoServicos.filter(h => h.terreno !== terreno);
   terrenos = terrenos.filter(t => t !== terreno);
   
   await salvarTudo();
   
-  // Se o filtro atual for este terreno, limpar filtro
   if (filtroTerreno === terreno) {
     filtroTerreno = '';
     document.getElementById('filtroTerreno').value = '';
@@ -919,7 +1149,7 @@ async function excluirTerreno(terreno) {
   atualizarSelectTerrenos();
   renderizarTerrenos();
   renderizarTabela();
-  alert(`✅ Terreno "${terreno}" e suas transações foram excluídos!`);
+  alert(`✅ Terreno "${terreno}" e todos os seus dados foram excluídos!`);
 }
 
 function fecharModalEditarTerreno() {
@@ -998,6 +1228,7 @@ function renderizarTerrenos() {
     const total = dados?.total || 0;
     const entradas = dados?.entradas || 0;
     const saidas = dados?.saidas || 0;
+    const temTransacoes = transacoes.some(t => t.terreno === terreno);
     
     return `
       <div class="card-terreno">
@@ -1015,8 +1246,10 @@ function renderizarTerrenos() {
           <span>📈 Entradas: R$ ${entradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
           <span>📉 Saídas: R$ ${saidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
         </div>
-        <div class="detalhes" style="margin-top: 8px;">
+        <div class="detalhes" style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
           <button class="btn-info btn-small" onclick="filtrarPorTerreno('${terreno.replace(/'/g, "\\'")}')">🔍 Ver transações</button>
+          <button class="btn-success btn-small" onclick="verHistorico('${terreno.replace(/'/g, "\\'")}')">📜 Histórico</button>
+          ${temTransacoes ? `<button class="btn-warning btn-small" onclick="abrirModalFinalizar('${terreno.replace(/'/g, "\\'")}')">🏁 Finalizar serviço</button>` : '<span style="color: #666; font-size: 10px;">✅ Sem transações ativas</span>'}
         </div>
       </div>
     `;
@@ -1066,7 +1299,7 @@ function renderizarTabela() {
   const tbody = document.getElementById('listaTransacoes');
   
   if (filtradas.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhuma transação encontrada</td>' + '<tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhuma transação encontrada</td>' + '</tr>';
     return;
   }
   
@@ -1087,6 +1320,7 @@ function renderizarTabela() {
 }
 
 function formatarData(dataStr) {
+  if (!dataStr) return '';
   const [ano, mes, dia] = dataStr.split('-');
   return `${dia}/${mes}/${ano}`;
 }
@@ -1252,6 +1486,11 @@ document.getElementById('closeModalBtn').addEventListener('click', fecharModal);
 document.getElementById('btnSalvarEdicao').addEventListener('click', salvarEdicaoTerreno);
 document.getElementById('btnCancelarEdicao').addEventListener('click', fecharModalEditarTerreno);
 document.getElementById('closeEditarTerrenoBtn').addEventListener('click', fecharModalEditarTerreno);
+document.getElementById('btnConfirmarFinalizar').addEventListener('click', confirmarFinalizar);
+document.getElementById('btnCancelarFinalizar').addEventListener('click', fecharModalFinalizar);
+document.getElementById('closeFinalizarBtn').addEventListener('click', fecharModalFinalizar);
+document.getElementById('btnFecharHistorico').addEventListener('click', fecharModalHistorico);
+document.getElementById('closeHistoricoBtn').addEventListener('click', fecharModalHistorico);
 
 document.getElementById('filtroMes').addEventListener('change', (e) => {
   filtroMes = e.target.value;
@@ -1277,19 +1516,20 @@ document.querySelectorAll('.tab').forEach(tab => {
 });
 
 window.addEventListener('click', (e) => {
-  const modal = document.getElementById('modalTransacao');
-  const modalTerreno = document.getElementById('modalEditarTerreno');
-  if (e.target === modal) {
-    fecharModal();
-  }
-  if (e.target === modalTerreno) {
-    fecharModalEditarTerreno();
-  }
+  const modalTransacao = document.getElementById('modalTransacao');
+  const modalEditarTerreno = document.getElementById('modalEditarTerreno');
+  const modalFinalizar = document.getElementById('modalFinalizar');
+  const modalHistorico = document.getElementById('modalHistorico');
+  
+  if (e.target === modalTransacao) fecharModal();
+  if (e.target === modalEditarTerreno) fecharModalEditarTerreno();
+  if (e.target === modalFinalizar) fecharModalFinalizar();
+  if (e.target === modalHistorico) fecharModalHistorico();
 });
 
 // ==================== INICIAR ====================
 carregarTodosDados();
-console.log('✅ Sistema Financeiro com Firebase - Edição/Exclusão de Terrenos!');
+console.log('✅ Sistema Financeiro com Firebase - Finalização de Serviço!');
 </script>
 </body>
 </html>
