@@ -7,9 +7,12 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Alfa Finance - Controle Financeiro</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-<!-- Firebase SDKs -->
+<!-- Chart.js para gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
@@ -21,383 +24,622 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+:root {
+  --bg-primary: #070b14;
+  --bg-secondary: #0f172a;
+  --bg-card: rgba(30, 41, 59, 0.5);
+  --bg-card-hover: rgba(30, 41, 59, 0.7);
+  --border-color: rgba(255, 255, 255, 0.06);
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --green: #10b981;
+  --green-dark: #059669;
+  --red: #ef4444;
+  --red-dark: #dc2626;
+  --blue: #3b82f6;
+  --blue-dark: #2563eb;
+  --yellow: #f59e0b;
+  --yellow-dark: #d97706;
+  --gradient-green: linear-gradient(135deg, #34d399, #059669);
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 body {
-  font-family: 'Inter', sans-serif;
-  background: #0a0a0a;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.03) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.02) 0px, transparent 50%);
   min-height: 100vh;
+  color: var(--text-primary);
+  padding-bottom: 60px;
+  -webkit-font-smoothing: antialiased;
 }
 
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--green);
+}
+
+/* Header com gradiente verde - NORMAL (rola junto com a página) */
 .header {
-  background: linear-gradient(135deg, #0f2a1f 0%, #1a3a2a 100%);
-  color: white;
-  padding: 15px 20px;
-  text-align: center;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.header h1 {
-  font-size: 22px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.30) 0%, rgba(52, 211, 153, 0.20) 40%, rgba(16, 185, 129, 0.30) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  padding: 14px 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 12px;
+  box-shadow: 0 4px 30px rgba(16, 185, 129, 0.06);
+  transition: var(--transition);
+  position: relative;
+  width: 100%;
 }
 
-.header p {
-  font-size: 11px;
-  opacity: 0.8;
-  margin-top: 5px;
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
+.header-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.header-logo img {
+  height: 140px;
+  width: auto;
+  display: block;
+  filter: drop-shadow(0 0 30px rgba(16, 185, 129, 0.20));
+  transition: var(--transition);
+}
+
+.header-logo img:hover {
+  filter: drop-shadow(0 0 50px rgba(16, 185, 129, 0.30));
+  transform: scale(1.02);
+}
+
+/* Container */
 .container {
-  max-width: 1400px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 15px;
+  padding: 24px;
 }
 
-.saldo-container {
+/* Cards de Saldo */
+.saldo-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
-  margin-bottom: 25px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
 }
 
 .card-saldo {
-  background: linear-gradient(135deg, #1a3a2a, #0f2a1f);
-  border-radius: 16px;
-  padding: 15px;
-  color: white;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-  transition: transform 0.2s;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-saldo::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--green);
+  opacity: 0;
+  transition: var(--transition);
 }
 
 .card-saldo:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
+  background: var(--bg-card-hover);
+  border-color: rgba(255,255,255,0.1);
 }
 
-.card-saldo h3 {
+.card-saldo:hover::before {
+  opacity: 1;
+}
+
+.card-saldo .label {
   font-size: 12px;
-  opacity: 0.8;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 8px;
 }
 
-.card-saldo .valor {
+.card-saldo .value {
   font-size: 28px;
   font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
-.card-saldo .valor.positivo { color: #4ade80; }
-.card-saldo .valor.negativo { color: #f87171; }
+.card-saldo .value.green { color: var(--green); }
+.card-saldo .value.red { color: var(--red); }
+.card-saldo .value.white { color: var(--text-primary); }
 
-.acoes {
+.card-saldo .sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Ações Rápidas */
+.actions-bar {
   display: flex;
   gap: 10px;
-  margin-bottom: 25px;
+  margin-bottom: 28px;
   flex-wrap: wrap;
 }
 
 .btn {
-  padding: 10px 18px;
+  padding: 10px 20px;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: var(--transition);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  font-family: inherit;
+  letter-spacing: 0.2px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
 }
 
-.btn-primary { background: #2e7d32; color: white; }
-.btn-primary:hover { background: #1b5e20; transform: translateY(-2px); }
-.btn-danger { background: #dc2626; color: white; }
-.btn-danger:hover { background: #b91c1c; transform: translateY(-2px); }
-.btn-warning { background: #d97706; color: white; }
-.btn-warning:hover { background: #b45309; transform: translateY(-2px); }
-.btn-info { background: #0284c7; color: white; }
-.btn-info:hover { background: #0369a1; transform: translateY(-2px); }
-.btn-success { background: #059669; color: white; }
-.btn-success:hover { background: #047857; transform: translateY(-2px); }
-.btn-secondary { background: #6b7280; color: white; }
-.btn-secondary:hover { background: #4b5563; transform: translateY(-2px); }
-.btn-small { padding: 8px 12px; font-size: 11px; }
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
 
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary { background: var(--green-dark); color: white; border-color: var(--green-dark); }
+.btn-primary:hover { background: var(--green); border-color: var(--green); }
+
+.btn-danger { background: var(--red-dark); color: white; border-color: var(--red-dark); }
+.btn-danger:hover { background: var(--red); border-color: var(--red); }
+
+.btn-blue { background: var(--blue-dark); color: white; border-color: var(--blue-dark); }
+.btn-blue:hover { background: var(--blue); border-color: var(--blue); }
+
+.btn-yellow { background: var(--yellow-dark); color: white; border-color: var(--yellow-dark); }
+.btn-yellow:hover { background: var(--yellow); border-color: var(--yellow); }
+
+.btn-outline { background: transparent; border-color: var(--border-color); }
+.btn-outline:hover { background: var(--bg-card); }
+
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+
+/* Tabs */
 .tabs {
   display: flex;
-  gap: 3px;
-  margin-bottom: 20px;
-  border-bottom: 2px solid #2a4a3a;
-  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 24px;
+  background: var(--bg-secondary);
+  padding: 4px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .tab {
-  padding: 10px 18px;
-  background: none;
+  padding: 10px 24px;
+  background: transparent;
   border: none;
-  color: #aaa;
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
-  border-radius: 8px 8px 0 0;
-}
-
-.tab:hover {
-  color: white;
-  background: rgba(46,125,50,0.2);
-}
-
-.tab.active {
-  color: #4ade80;
-  border-bottom: 2px solid #4ade80;
-  background: rgba(74,222,128,0.1);
-}
-
-.filtros {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.filtro-input, .filtro-select {
-  padding: 10px;
-  border: 1px solid #2a4a3a;
-  border-radius: 8px;
-  background: #1a3a2a;
-  color: white;
-  font-size: 13px;
+  transition: var(--transition);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
   font-family: inherit;
 }
 
-.filtro-input:focus, .filtro-select:focus {
-  outline: none;
-  border-color: #4caf50;
+.tab:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
+.tab.active {
+  color: var(--text-primary);
+  background: rgba(16, 185, 129, 0.12);
 }
 
-.tabela-container {
-  background: #1a3a2a;
-  border-radius: 16px;
+.tab.active i { color: var(--green); }
+
+.tab i { margin-right: 6px; }
+
+/* Filtros */
+.filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  align-items: center;
+  background: var(--bg-card);
+  padding: 16px 20px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.filter-input, .filter-select {
+  padding: 8px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  transition: var(--transition);
+  min-width: 140px;
+}
+
+.filter-input:focus, .filter-select:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.filter-input::placeholder { color: var(--text-muted); }
+
+/* Container do Gráfico */
+.chart-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 24px;
+  transition: var(--transition);
+}
+
+.chart-container:hover {
+  border-color: rgba(255,255,255,0.1);
+}
+
+.chart-wrapper {
+  position: relative;
+  height: 350px;
+  width: 100%;
+}
+
+.chart-wrapper canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.chart-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.chart-stat {
+  text-align: center;
+}
+
+.chart-stat .label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chart-stat .value {
+  font-size: 20px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.chart-stat .value.green { color: var(--green); }
+.chart-stat .value.red { color: var(--red); }
+.chart-stat .value.blue { color: var(--blue); }
+
+/* Tabela */
+.table-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+.table-container:hover {
+  border-color: rgba(255,255,255,0.1);
+}
+
+.table-scroll {
   overflow-x: auto;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  -webkit-overflow-scrolling: touch;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 600px;
+  min-width: 700px;
 }
 
 th, td {
-  padding: 12px;
+  padding: 14px 20px;
   text-align: left;
-  border-bottom: 1px solid #2a4a3a;
+  border-bottom: 1px solid var(--border-color);
 }
 
 th {
-  background: #0f2a1f;
-  color: #81c784;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
   font-weight: 600;
-  font-size: 12px;
-  position: sticky;
-  top: 0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 td {
-  color: white;
-  font-size: 12px;
+  font-size: 13px;
+  color: var(--text-primary);
 }
 
-tr:hover {
-  background: #2a4a3a;
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+
+.badge-terreno {
+  display: inline-block;
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--blue);
 }
 
-.entrada { color: #4ade80; font-weight: 600; }
-.saida { color: #f87171; font-weight: 600; }
+.badge-entrada { color: var(--green); }
+.badge-saida { color: var(--red); }
 
-.acoes-linha {
+.actions-cell {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
 }
 
-.btn-edit, .btn-delete {
-  padding: 5px 10px;
+.btn-action {
+  padding: 6px 10px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 11px;
-  font-weight: 600;
-  transition: all 0.2s;
+  transition: var(--transition);
+  font-size: 13px;
+  background: transparent;
+  color: var(--text-secondary);
 }
 
-.btn-edit { background: #0284c7; color: white; }
-.btn-edit:hover { background: #0369a1; }
-.btn-delete { background: #dc2626; color: white; }
-.btn-delete:hover { background: #b91c1c; }
+.btn-action:hover { background: var(--bg-secondary); }
+.btn-action.edit:hover { color: var(--blue); background: rgba(59, 130, 246, 0.1); }
+.btn-action.delete:hover { color: var(--red); background: rgba(239, 68, 68, 0.1); }
 
+/* Terrenos Grid */
 .terrenos-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 15px;
-  margin-top: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
 }
 
 .card-terreno {
-  background: #1a3a2a;
-  border-radius: 16px;
-  padding: 18px;
-  border-left: 4px solid #4caf50;
-  transition: all 0.2s;
-  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  transition: var(--transition);
 }
 
 .card-terreno:hover {
   transform: translateY(-3px);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  background: var(--bg-card-hover);
+  border-color: rgba(255,255,255,0.1);
+  box-shadow: var(--shadow);
 }
 
-.card-terreno h3 {
-  color: #81c784;
-  font-size: 15px;
-  margin-bottom: 10px;
+.card-terreno .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
+  padding: 0;
+  background: transparent;
+  border: none;
+  backdrop-filter: none;
+  position: static;
+}
+
+.card-terreno .header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
+
+.card-terreno .header h3 i { color: var(--blue); }
 
 .card-terreno .total {
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 800;
-  margin: 10px 0;
+  margin: 12px 0;
 }
 
-.card-terreno .total.positivo { color: #4ade80; }
-.card-terreno .total.negativo { color: #f87171; }
+.card-terreno .total.green { color: var(--green); }
+.card-terreno .total.red { color: var(--red); }
 
-.card-terreno .detalhes {
-  font-size: 11px;
-  color: #aaa;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid #2a4a3a;
-}
-
-.card-terreno .detalhes span {
-  display: inline-block;
-  margin-right: 12px;
-}
-
-.terreno-acoes {
+.card-terreno .details {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
 }
 
-.terreno-botoes {
-  display: flex;
+.card-terreno .actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
-  flex-wrap: wrap;
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid #2a4a3a;
+  border-top: 1px solid var(--border-color);
 }
 
-.gestao-terrenos {
+.card-terreno .actions .btn {
+  justify-content: center;
+}
+
+.card-terreno .actions .btn-full {
+  grid-column: span 2;
+}
+
+/* Gestão de Terrenos */
+.terreno-manager {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 20px;
   flex-wrap: wrap;
 }
 
-.input-terreno {
+.terreno-manager input {
   flex: 1;
-  padding: 12px;
-  border: 1px solid #2a4a3a;
-  border-radius: 8px;
-  background: #1a3a2a;
-  color: white;
+  min-width: 200px;
+  padding: 10px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   font-size: 14px;
   font-family: inherit;
 }
 
+.terreno-manager input:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Modal */
 .modal {
   display: none;
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.95);
-  z-index: 1000;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(7, 11, 20, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 2000;
   align-items: center;
   justify-content: center;
-  padding: 15px;
+  padding: 20px;
 }
 
-.modal.show {
-  display: flex;
-}
+.modal.show { display: flex; }
 
 .modal-content {
-  background: #1a3a2a;
-  border-radius: 20px;
-  max-width: 500px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  max-width: 520px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  animation: slideIn 0.3s ease;
+  animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-50px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .modal-header {
-  padding: 18px;
-  background: #0f2a1f;
-  border-radius: 20px 20px 0 0;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #2a4a3a;
 }
 
 .modal-header h2 {
-  color: white;
   font-size: 18px;
+  font-weight: 700;
 }
 
-.close-modal {
+.modal-close {
   background: none;
   border: none;
-  color: #aaa;
-  font-size: 28px;
+  color: var(--text-secondary);
+  font-size: 20px;
   cursor: pointer;
-  transition: color 0.2s;
-  padding: 0 8px;
+  transition: var(--transition);
+  padding: 4px;
 }
 
-.close-modal:hover {
-  color: #f87171;
-}
+.modal-close:hover { color: var(--red); }
 
 .modal-body {
-  padding: 18px;
+  padding: 24px;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
 }
 
 .form-group {
@@ -406,26 +648,34 @@ tr:hover {
 
 .form-group label {
   display: block;
-  color: #81c784;
   font-size: 12px;
   font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
   margin-bottom: 6px;
 }
 
-.form-group input, .form-group select, .form-group textarea {
+.form-group input,
+.form-group select,
+.form-group textarea {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #2a4a3a;
-  border-radius: 8px;
-  background: #0f2a1f;
-  color: white;
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   font-size: 14px;
   font-family: inherit;
+  transition: var(--transition);
 }
 
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
   outline: none;
-  border-color: #4caf50;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
 .form-group textarea {
@@ -433,310 +683,445 @@ tr:hover {
   min-height: 70px;
 }
 
-.modal-footer {
-  padding: 18px;
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  border-top: 1px solid #2a4a3a;
-}
-
-.badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-size: 10px;
-  font-weight: 600;
-  background: #2a4a3a;
-  color: #81c784;
-}
-
-.storage-status {
-  background: rgba(46,125,50,0.2);
-  border-radius: 8px;
-  padding: 8px 15px;
-  font-size: 11px;
-  text-align: center;
-  margin-top: 20px;
-  color: #4ade80;
-}
-
+/* Loading */
 .loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.8);
   display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(7, 11, 20, 0.8);
+  backdrop-filter: blur(4px);
+  z-index: 3000;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
 }
 
-.loading-overlay.show {
-  display: flex;
-}
+.loading-overlay.show { display: flex; }
 
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #2a4a3a;
-  border-top-color: #4caf50;
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255,255,255,0.05);
+  border-top-color: var(--green);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-.resumo-final {
-  background: linear-gradient(135deg, #0f2a1f, #1a3a2a);
-  border-radius: 12px;
-  padding: 15px;
-  margin: 15px 0;
+/* Status */
+.status-bar {
   text-align: center;
+  margin-top: 24px;
+  padding: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 
-.resumo-final h4 {
-  color: #81c784;
-  font-size: 13px;
+.status-bar i { color: var(--green); }
+
+/* Resumo Finalização */
+.finalizar-resumo {
+  background: var(--bg-primary);
+  border-radius: var(--radius-sm);
+  padding: 16px 20px;
+  margin: 12px 0;
+  border: 1px solid var(--border-color);
+}
+
+.finalizar-resumo h4 {
+  font-size: 14px;
   margin-bottom: 10px;
 }
 
-.resumo-final .lucro {
-  font-size: 24px;
+.finalizar-resumo .row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.finalizar-resumo .total {
+  font-size: 22px;
   font-weight: 800;
-  color: #4ade80;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
 }
 
-.resumo-final .prejuizo {
-  font-size: 24px;
-  font-weight: 800;
-  color: #f87171;
-}
+.finalizar-resumo .total.green { color: var(--green); }
+.finalizar-resumo .total.red { color: var(--red); }
 
-.historico-container {
-  max-height: 300px;
-  overflow-y: auto;
-  margin-top: 15px;
-}
-
+/* Histórico */
 .historico-item {
-  background: #0f2a1f;
-  border-radius: 8px;
-  padding: 10px;
-  margin-bottom: 8px;
-  font-size: 11px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  margin-bottom: 10px;
 }
 
-.historico-item .data {
-  color: #81c784;
+.historico-item .date {
+  font-size: 12px;
   font-weight: 600;
+  color: var(--text-secondary);
 }
 
-.historico-item .resumo {
-  margin-top: 5px;
-  color: #aaa;
+.historico-item .content {
+  font-size: 13px;
+  margin-top: 4px;
+  line-height: 1.6;
 }
 
-/* Melhorias para celular */
+/* RESPONSIVO */
 @media (max-width: 768px) {
-  .container {
-    padding: 12px;
+  .header {
+    padding: 10px 16px;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
   }
-  
-  .saldo-container {
-    grid-template-columns: 1fr;
+
+  .header-left { 
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .header-logo img {
+    height: 100px;
+  }
+
+  .container { padding: 16px; }
+
+  .saldo-grid {
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
   }
-  
-  .card-saldo .valor {
+
+  .card-saldo {
+    padding: 16px;
+  }
+
+  .card-saldo .value {
     font-size: 22px;
   }
-  
-  .btn {
-    padding: 10px 14px;
+
+  .actions-bar {
+    gap: 8px;
+  }
+
+  .actions-bar .btn {
+    padding: 8px 14px;
     font-size: 12px;
     flex: 1;
     justify-content: center;
   }
-  
-  .acoes {
-    flex-direction: column;
+
+  .tabs {
+    gap: 2px;
+    padding: 3px;
   }
-  
-  .acoes .btn {
+
+  .tab {
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+
+  .tab i { margin-right: 4px; }
+
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 16px;
+    gap: 8px;
+  }
+
+  .filter-group {
     width: 100%;
   }
-  
-  .tab {
-    padding: 8px 12px;
-    font-size: 12px;
+
+  .filter-group label {
+    min-width: 60px;
+  }
+
+  .filter-input, .filter-select {
     flex: 1;
-    text-align: center;
+    min-width: 0;
+    width: 100%;
   }
-  
-  .tabs {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+
+  .chart-wrapper {
+    height: 250px;
   }
-  
+
+  .chart-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .chart-stat .value {
+    font-size: 18px;
+  }
+
   th, td {
-    padding: 8px;
-    font-size: 10px;
+    padding: 10px 14px;
+    font-size: 12px;
   }
-  
+
   .terrenos-grid {
     grid-template-columns: 1fr;
   }
-  
-  .filtros {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .filtro-input, .filtro-select {
-    width: 100%;
-  }
-  
-  .card-terreno h3 {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .terreno-acoes {
-    width: 100%;
-    justify-content: flex-end;
-  }
-  
-  .terreno-botoes {
-    flex-direction: column;
-  }
-  
-  .terreno-botoes .btn-small {
-    width: 100%;
-    justify-content: center;
-  }
-  
-  .btn-small {
-    padding: 10px 12px;
-    font-size: 12px;
-  }
-  
+
   .modal-content {
-    max-width: 95%;
+    max-width: 100%;
     margin: 10px;
   }
-  
+
   .modal-footer {
     flex-direction: column;
   }
-  
+
   .modal-footer .btn {
-    width: 100%;
     justify-content: center;
+  }
+
+  .terreno-manager {
+    flex-direction: column;
+  }
+
+  .terreno-manager input {
+    min-width: 0;
+  }
+
+  .card-terreno .actions {
+    grid-template-columns: 1fr;
+  }
+
+  .card-terreno .actions .btn-full {
+    grid-column: span 1;
   }
 }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+@media (max-width: 480px) {
+  .saldo-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-wrapper {
+    height: 200px;
+  }
+
+  .actions-bar .btn {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+
+  .actions-bar .btn i { font-size: 12px; }
+
+  .tab {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .header-logo img {
+    height: 80px;
+  }
+
+  .header {
+    padding: 8px;
+  }
 }
 
-::-webkit-scrollbar-track {
-  background: #1a3a2a;
-}
+@media (min-width: 769px) {
+  .container { padding: 32px; }
 
-::-webkit-scrollbar-thumb {
-  background: #4caf50;
-  border-radius: 3px;
+  .saldo-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .filters {
+    flex-wrap: nowrap;
+  }
+
+  .filter-group {
+    flex: 1;
+  }
 }
 </style>
 </head>
 <body>
 
+<!-- Loading -->
 <div class="loading-overlay" id="loadingOverlay">
   <div class="spinner"></div>
 </div>
 
-<div class="header">
-  <h1>
-    <span>💰</span>
-    Alfa Finance
-  </h1>
-  <p>Controle Financeiro por Terreno - Com Finalização de Serviço</p>
-</div>
+<!-- Header com gradiente verde - NORMAL (rola junto com a página) -->
+<header class="header">
+  <div class="header-left">
+    <a href="#" class="header-logo">
+      <img src="https://i.postimg.cc/RCjcfGNr/Design-sem-nome-(17).png" alt="Alfa Finance Logo">
+    </a>
+  </div>
+</header>
 
+<!-- Main -->
 <div class="container">
-  <div class="saldo-container">
+  <!-- Saldo Cards -->
+  <div class="saldo-grid">
     <div class="card-saldo">
-      <h3>💰 Saldo Total</h3>
-      <div class="valor" id="saldoTotal">R$ 0,00</div>
+      <div class="label"><i class="fa-solid fa-scale-balanced"></i> Saldo Total</div>
+      <div class="value white" id="saldoTotal">R$ 0,00</div>
+      <div class="sub">Atualizado em tempo real</div>
     </div>
     <div class="card-saldo">
-      <h3>📈 Total de Entradas</h3>
-      <div class="valor positivo" id="totalEntradas">R$ 0,00</div>
+      <div class="label"><i class="fa-solid fa-arrow-trend-up"></i> Total Entradas</div>
+      <div class="value green" id="totalEntradas">R$ 0,00</div>
+      <div class="sub">Receitas do período</div>
     </div>
     <div class="card-saldo">
-      <h3>📉 Total de Saídas</h3>
-      <div class="valor negativo" id="totalSaidas">R$ 0,00</div>
+      <div class="label"><i class="fa-solid fa-arrow-trend-down"></i> Total Saídas</div>
+      <div class="value red" id="totalSaidas">R$ 0,00</div>
+      <div class="sub">Despesas do período</div>
+    </div>
+    <div class="card-saldo">
+      <div class="label"><i class="fa-solid fa-layer-group"></i> Terrenos</div>
+      <div class="value white" id="totalTerrenos">0</div>
+      <div class="sub">Ativos no sistema</div>
     </div>
   </div>
 
-  <div class="acoes">
-    <button class="btn btn-primary" id="btnNovaEntrada">➕ Nova Entrada</button>
-    <button class="btn btn-danger" id="btnNovaSaida">➖ Nova Saída</button>
-    <button class="btn btn-info" id="btnNovoTerreno">🏷️ Novo Terreno</button>
-    <button class="btn btn-warning" id="btnExportar">📥 Exportar CSV</button>
-    <button class="btn btn-secondary" id="btnLimparFiltros">🗑️ Limpar Filtros</button>
+  <!-- Ações Rápidas -->
+  <div class="actions-bar">
+    <button class="btn btn-primary" id="btnNovaEntrada"><i class="fa-solid fa-plus"></i> Nova Entrada</button>
+    <button class="btn btn-danger" id="btnNovaSaida"><i class="fa-solid fa-minus"></i> Nova Saída</button>
+    <button class="btn btn-blue" id="btnNovoTerreno"><i class="fa-solid fa-layer-group"></i> Novo Terreno</button>
+    <button class="btn btn-yellow" id="btnExportar"><i class="fa-solid fa-download"></i> Exportar CSV</button>
+    <button class="btn btn-outline" id="btnLimparFiltros"><i class="fa-solid fa-undo"></i> Limpar</button>
   </div>
 
-  <div class="tabs">
-    <button class="tab active" data-tab="entradas">📋 Entradas</button>
-    <button class="tab" data-tab="saidas">📋 Saídas</button>
-    <button class="tab" data-tab="todas">📋 Todas</button>
-    <button class="tab" data-tab="terrenos">🏘️ Por Terreno</button>
+  <!-- Tabs - GRÁFICO como primeira aba -->
+  <div class="tabs" id="tabsContainer">
+    <button class="tab active" data-tab="grafico"><i class="fa-solid fa-chart-bar"></i> Gráfico</button>
+    <button class="tab" data-tab="entradas"><i class="fa-solid fa-circle-arrow-up"></i> Entradas</button>
+    <button class="tab" data-tab="saidas"><i class="fa-solid fa-circle-arrow-down"></i> Saídas</button>
+    <button class="tab" data-tab="todas"><i class="fa-solid fa-list"></i> Todas</button>
+    <button class="tab" data-tab="terrenos"><i class="fa-solid fa-building"></i> Terrenos</button>
   </div>
 
-  <div class="filtros" id="filtrosContainer">
-    <input type="month" id="filtroMes" class="filtro-input" placeholder="Filtrar por mês">
-    <input type="text" id="filtroCategoria" class="filtro-input" placeholder="Filtrar por categoria">
-    <select id="filtroTerreno" class="filtro-select">
-      <option value="">Todos os terrenos</option>
-    </select>
+  <!-- Filtros -->
+  <div class="filters" id="filtersContainer">
+    <div class="filter-group">
+      <label><i class="fa-regular fa-calendar"></i> Mês</label>
+      <input type="month" id="filtroMes" class="filter-input">
+    </div>
+    <div class="filter-group">
+      <label><i class="fa-regular fa-folder"></i> Categoria</label>
+      <input type="text" id="filtroCategoria" class="filter-input" placeholder="Filtrar categoria...">
+    </div>
+    <div class="filter-group">
+      <label><i class="fa-solid fa-building"></i> Terreno</label>
+      <select id="filtroTerreno" class="filter-select">
+        <option value="">Todos</option>
+      </select>
+    </div>
   </div>
 
-  <div class="tabela-container" id="tabelaContainer">
-    <table id="tabelaTransacoes">
-      <thead>
-        <tr>
-          <th>Data</th>
-          <th>Terreno</th>
-          <th>Tipo</th>
-          <th>Categoria</th>
-          <th>Descrição</th>
-          <th>Valor</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody id="listaTransacoes">
-        <tr><td colspan="7" style="text-align: center;">Carregando...</td</tr>
-      </tbody>
-    </table>
+  <!-- Gráfico -->
+  <div id="graficoContainer">
+    <div class="chart-container">
+      <div class="filters" style="margin-bottom: 20px; padding: 0; border: none; background: transparent;">
+        <div class="filter-group">
+          <label><i class="fa-regular fa-calendar"></i> De</label>
+          <input type="date" id="graficoDataInicio" class="filter-input" style="min-width: 130px;">
+        </div>
+        <div class="filter-group">
+          <label><i class="fa-regular fa-calendar"></i> Até</label>
+          <input type="date" id="graficoDataFim" class="filter-input" style="min-width: 130px;">
+        </div>
+        <div class="filter-group">
+          <label><i class="fa-solid fa-building"></i> Terreno</label>
+          <select id="graficoTerreno" class="filter-select">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label><i class="fa-solid fa-chart-simple"></i> Agrupar</label>
+          <select id="graficoPeriodo" class="filter-select">
+            <option value="dia">Dia</option>
+            <option value="mes" selected>Mês</option>
+            <option value="ano">Ano</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" id="btnAtualizarGrafico"><i class="fa-solid fa-rotate"></i> Atualizar</button>
+      </div>
+
+      <div class="chart-wrapper">
+        <canvas id="graficoFinanceiro"></canvas>
+      </div>
+
+      <div class="chart-stats" id="resumoGrafico">
+        <div class="chart-stat">
+          <div class="label">📈 Entradas</div>
+          <div class="value green" id="graficoTotalEntradas">R$ 0,00</div>
+        </div>
+        <div class="chart-stat">
+          <div class="label">📉 Saídas</div>
+          <div class="value red" id="graficoTotalSaidas">R$ 0,00</div>
+        </div>
+        <div class="chart-stat">
+          <div class="label">💰 Saldo</div>
+          <div class="value" id="graficoSaldo">R$ 0,00</div>
+        </div>
+        <div class="chart-stat">
+          <div class="label">📊 Transações</div>
+          <div class="value blue" id="graficoTotalTransacoes">0</div>
+        </div>
+      </div>
+    </div>
   </div>
 
+  <!-- Tabela -->
+  <div class="table-container" id="tabelaContainer" style="display: none;">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Terreno</th>
+            <th>Tipo</th>
+            <th>Categoria</th>
+            <th>Descrição</th>
+            <th>Valor</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="listaTransacoes">
+          <tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 40px;">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size: 20px;"></i><br>Carregando...
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Terrenos -->
   <div id="terrenosContainer" style="display: none;">
-    <div class="gestao-terrenos">
-      <input type="text" id="novoTerrenoNome" class="input-terreno" placeholder="Nome do novo terreno">
-      <button class="btn btn-primary" id="btnAdicionarTerreno">➕ Adicionar</button>
+    <div class="terreno-manager">
+      <input type="text" id="novoTerrenoNome" placeholder="Nome do novo terreno...">
+      <button class="btn btn-primary" id="btnAdicionarTerreno"><i class="fa-solid fa-plus"></i> Adicionar</button>
     </div>
     <div id="terrenosGrid" class="terrenos-grid"></div>
   </div>
 
-  <div class="storage-status" id="storageStatus">☁️ Firebase: Conectando...</div>
+  <!-- Status -->
+  <div class="status-bar" id="storageStatus">
+    <i class="fa-solid fa-cloud-arrow-up"></i> Firebase: Conectando...
+  </div>
 </div>
 
 <!-- Modal Transação -->
@@ -744,29 +1129,29 @@ tr:hover {
   <div class="modal-content">
     <div class="modal-header">
       <h2 id="modalTitulo">Nova Transação</h2>
-      <button class="close-modal" id="closeModalBtn">✕</button>
+      <button class="modal-close" id="closeModalBtn"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="transacaoId">
       <div class="form-group">
-        <label>📅 Data</label>
+        <label>Data</label>
         <input type="date" id="data" required>
       </div>
       <div class="form-group">
-        <label>🏘️ Terreno</label>
+        <label>Terreno</label>
         <select id="terreno" required>
-          <option value="">Selecione um terreno</option>
+          <option value="">Selecione</option>
         </select>
       </div>
       <div class="form-group">
-        <label>💰 Tipo</label>
+        <label>Tipo</label>
         <select id="tipo" required>
           <option value="entrada">Entrada (Receita)</option>
           <option value="saida">Saída (Despesa)</option>
         </select>
       </div>
       <div class="form-group">
-        <label>📂 Categoria</label>
+        <label>Categoria</label>
         <select id="categoria" required>
           <optgroup label="Entradas">
             <option value="Serviço de Roçada">Serviço de Roçada</option>
@@ -787,51 +1172,51 @@ tr:hover {
         </select>
       </div>
       <div class="form-group">
-        <label>📝 Descrição</label>
+        <label>Descrição</label>
         <input type="text" id="descricao" placeholder="Ex: Roçada no terreno" required>
       </div>
       <div class="form-group">
-        <label>💵 Valor (R$)</label>
+        <label>Valor (R$)</label>
         <input type="number" id="valor" step="0.01" placeholder="0,00" required>
       </div>
       <div class="form-group">
-        <label>📌 Observações</label>
+        <label>Observações</label>
         <textarea id="observacoes" placeholder="Observações adicionais..."></textarea>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" id="btnCancelarModal">Cancelar</button>
+      <button class="btn btn-outline" id="btnCancelarModal">Cancelar</button>
       <button class="btn btn-primary" id="btnSalvarTransacao">Salvar</button>
     </div>
   </div>
 </div>
 
-<!-- Modal Finalizar Serviço -->
+<!-- Modal Finalizar -->
 <div id="modalFinalizar" class="modal">
   <div class="modal-content">
     <div class="modal-header">
       <h2>🏁 Finalizar Serviço</h2>
-      <button class="close-modal" id="closeFinalizarBtn">✕</button>
+      <button class="modal-close" id="closeFinalizarBtn"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body">
       <div id="finalizarResumo"></div>
       <div class="form-group">
-        <label>📝 Observações finais (opcional)</label>
+        <label>Observações finais</label>
         <textarea id="observacoesFinais" placeholder="Observações sobre o serviço finalizado..."></textarea>
       </div>
       <div class="form-group">
-        <label>⚠️ ATENÇÃO: Esta ação irá:</label>
-        <ul style="color: #aaa; font-size: 12px; margin-top: 5px; padding-left: 20px;">
-          <li>📊 Gerar um resumo final do serviço</li>
-          <li>💾 Salvar no histórico do terreno</li>
-          <li>🔄 Reiniciar todas as transações do terreno</li>
-          <li>📈 Começar um novo ciclo do zero</li>
+        <label style="color: var(--yellow);"><i class="fa-solid fa-triangle-exclamation"></i> Atenção</label>
+        <ul style="color: var(--text-secondary); font-size: 13px; padding-left: 20px; line-height: 1.8;">
+          <li>📊 Gera um resumo final do serviço</li>
+          <li>💾 Salva no histórico do terreno</li>
+          <li>🔄 Reinicia todas as transações do terreno</li>
+          <li>📈 Começa um novo ciclo do zero</li>
         </ul>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" id="btnCancelarFinalizar">Cancelar</button>
-      <button class="btn btn-success" id="btnConfirmarFinalizar">✅ Finalizar e Reiniciar</button>
+      <button class="btn btn-outline" id="btnCancelarFinalizar">Cancelar</button>
+      <button class="btn btn-primary" id="btnConfirmarFinalizar">Finalizar e Reiniciar</button>
     </div>
   </div>
 </div>
@@ -841,17 +1226,17 @@ tr:hover {
   <div class="modal-content">
     <div class="modal-header">
       <h2>✏️ Editar Terreno</h2>
-      <button class="close-modal" id="closeEditarTerrenoBtn">✕</button>
+      <button class="modal-close" id="closeEditarTerrenoBtn"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="terrenoEditandoOriginal">
       <div class="form-group">
-        <label>🏷️ Nome do Terreno</label>
-        <input type="text" id="terrenoEditandoNome" class="input-terreno" placeholder="Digite o novo nome" style="width: 100%;">
+        <label>Nome do Terreno</label>
+        <input type="text" id="terrenoEditandoNome" placeholder="Digite o novo nome">
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" id="btnCancelarEdicao">Cancelar</button>
+      <button class="btn btn-outline" id="btnCancelarEdicao">Cancelar</button>
       <button class="btn btn-primary" id="btnSalvarEdicao">Salvar</button>
     </div>
   </div>
@@ -862,19 +1247,19 @@ tr:hover {
   <div class="modal-content">
     <div class="modal-header">
       <h2>📜 Histórico do Terreno</h2>
-      <button class="close-modal" id="closeHistoricoBtn">✕</button>
+      <button class="modal-close" id="closeHistoricoBtn"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body">
       <div id="historicoConteudo"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-secondary" id="btnFecharHistorico">Fechar</button>
+      <button class="btn btn-outline" id="btnFecharHistorico">Fechar</button>
     </div>
   </div>
 </div>
 
 <script>
-// ==================== FIREBASE CONFIG ====================
+// ==================== FIREBASE ====================
 const firebaseConfig = {
   apiKey: "AIzaSyBE_foaU7-w8ziyERDMOrKCq9B29X17L1U",
   authDomain: "alfa-finance-3caf2.firebaseapp.com",
@@ -887,120 +1272,72 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
-// ==================== VARIÁVEIS GLOBAIS ====================
+// ==================== VARIÁVEIS ====================
 let transacoes = [];
 let terrenos = [];
 let historicoServicos = [];
-let tabAtual = 'entradas';
+let tabAtual = 'grafico';
 let filtroMes = '';
 let filtroCategoria = '';
 let filtroTerreno = '';
 let editandoId = null;
 let terrenoFinalizando = null;
+let chartInstance = null;
 
-// ==================== FUNÇÕES FIREBASE ====================
-
+// ==================== LOADING ====================
 function showLoading(show) {
-  const overlay = document.getElementById('loadingOverlay');
-  if (show) {
-    overlay.classList.add('show');
-  } else {
-    overlay.classList.remove('show');
-  }
+  document.getElementById('loadingOverlay').classList.toggle('show', show);
 }
 
+// ==================== FIREBASE CRUD ====================
 async function salvarTransacoesFirebase() {
-  try {
-    await database.ref('transacoes').set(transacoes);
-    return true;
-  } catch (error) {
-    console.error('Erro ao salvar transações:', error);
-    return false;
-  }
+  try { await database.ref('transacoes').set(transacoes); return true; } 
+  catch (e) { console.error(e); return false; }
 }
 
 async function salvarTerrenosFirebase() {
-  try {
-    await database.ref('terrenos').set(terrenos);
-    return true;
-  } catch (error) {
-    console.error('Erro ao salvar terrenos:', error);
-    return false;
-  }
+  try { await database.ref('terrenos').set(terrenos); return true; } 
+  catch (e) { console.error(e); return false; }
 }
 
 async function salvarHistoricoFirebase() {
-  try {
-    await database.ref('historico').set(historicoServicos);
-    return true;
-  } catch (error) {
-    console.error('Erro ao salvar histórico:', error);
-    return false;
-  }
+  try { await database.ref('historico').set(historicoServicos); return true; } 
+  catch (e) { console.error(e); return false; }
 }
 
 async function carregarTransacoesFirebase() {
   try {
-    const snapshot = await database.ref('transacoes').once('value');
-    if (snapshot.exists()) {
-      transacoes = snapshot.val();
-    } else {
-      transacoes = [];
-    }
+    const snap = await database.ref('transacoes').once('value');
+    transacoes = snap.exists() ? snap.val() : [];
     return true;
-  } catch (error) {
-    console.error('Erro ao carregar transações:', error);
-    return false;
-  }
+  } catch (e) { console.error(e); return false; }
 }
 
 async function carregarTerrenosFirebase() {
   try {
-    const snapshot = await database.ref('terrenos').once('value');
-    if (snapshot.exists()) {
-      terrenos = snapshot.val();
-    } else {
-      terrenos = [];
-    }
+    const snap = await database.ref('terrenos').once('value');
+    terrenos = snap.exists() ? snap.val() : [];
     return true;
-  } catch (error) {
-    console.error('Erro ao carregar terrenos:', error);
-    return false;
-  }
+  } catch (e) { console.error(e); return false; }
 }
 
 async function carregarHistoricoFirebase() {
   try {
-    const snapshot = await database.ref('historico').once('value');
-    if (snapshot.exists()) {
-      historicoServicos = snapshot.val();
-    } else {
-      historicoServicos = [];
-    }
+    const snap = await database.ref('historico').once('value');
+    historicoServicos = snap.exists() ? snap.val() : [];
     return true;
-  } catch (error) {
-    console.error('Erro ao carregar histórico:', error);
-    return false;
-  }
+  } catch (e) { console.error(e); return false; }
 }
 
 async function carregarTodosDados() {
   showLoading(true);
-  document.getElementById('storageStatus').innerHTML = '☁️ Firebase: Carregando dados...';
-  
   await Promise.all([
     carregarTransacoesFirebase(),
     carregarTerrenosFirebase(),
     carregarHistoricoFirebase()
   ]);
-  
   atualizarTudo();
-  document.getElementById('storageStatus').innerHTML = '☁️ Firebase: Conectado e sincronizado';
   showLoading(false);
-  
-  setTimeout(() => {
-    document.getElementById('storageStatus').innerHTML = '☁️ Firebase: Online';
-  }, 3000);
 }
 
 async function salvarTudo() {
@@ -1011,454 +1348,370 @@ async function salvarTudo() {
     salvarHistoricoFirebase()
   ]);
   showLoading(false);
-  
-  document.getElementById('storageStatus').innerHTML = '☁️ Dados salvos na nuvem!';
-  setTimeout(() => {
-    document.getElementById('storageStatus').innerHTML = '☁️ Firebase: Online';
-  }, 2000);
 }
 
-// ==================== FUNÇÕES DE FINALIZAÇÃO ====================
+// ==================== GRÁFICO ====================
+function obterDadosGrafico() {
+  const dataInicio = document.getElementById('graficoDataInicio').value;
+  const dataFim = document.getElementById('graficoDataFim').value;
+  const terrenoFiltro = document.getElementById('graficoTerreno').value;
+  const periodo = document.getElementById('graficoPeriodo').value;
 
-function abrirModalFinalizar(terreno) {
-  terrenoFinalizando = terreno;
-  
-  const transacoesTerreno = transacoes.filter(t => t.terreno === terreno);
-  const totalEntradas = transacoesTerreno.filter(t => t.tipo === 'entrada').reduce((sum, t) => sum + t.valor, 0);
-  const totalSaidas = transacoesTerreno.filter(t => t.tipo === 'saida').reduce((sum, t) => sum + t.valor, 0);
-  const lucro = totalEntradas - totalSaidas;
-  
-  const resumoHtml = `
-    <div class="resumo-final">
-      <h4>📊 Resumo do Serviço - ${terreno}</h4>
-      <div>📈 Total de Entradas: <strong style="color: #4ade80;">R$ ${totalEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></div>
-      <div>📉 Total de Saídas: <strong style="color: #f87171;">R$ ${totalSaidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></div>
-      <div style="margin-top: 10px;">💰 <strong>RESULTADO:</strong></div>
-      <div class="${lucro >= 0 ? 'lucro' : 'prejuizo'}">
-        ${lucro >= 0 ? '✅ LUCRO' : '❌ PREJUÍZO'} de R$ ${Math.abs(lucro).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-      </div>
-    </div>
-  `;
-  
-  document.getElementById('finalizarResumo').innerHTML = resumoHtml;
-  document.getElementById('observacoesFinais').value = '';
-  document.getElementById('modalFinalizar').classList.add('show');
-}
+  let filtradas = [...transacoes];
 
-async function confirmarFinalizar() {
-  if (!terrenoFinalizando) return;
-  
-  const observacoes = document.getElementById('observacoesFinais').value;
-  const transacoesTerreno = transacoes.filter(t => t.terreno === terrenoFinalizando);
-  const totalEntradas = transacoesTerreno.filter(t => t.tipo === 'entrada').reduce((sum, t) => sum + t.valor, 0);
-  const totalSaidas = transacoesTerreno.filter(t => t.tipo === 'saida').reduce((sum, t) => sum + t.valor, 0);
-  const lucro = totalEntradas - totalSaidas;
-  
-  const servicoFinalizado = {
-    id: Date.now(),
-    terreno: terrenoFinalizando,
-    dataFinalizacao: new Date().toISOString().split('T')[0],
-    totalEntradas: totalEntradas,
-    totalSaidas: totalSaidas,
-    lucro: lucro,
-    resultado: lucro >= 0 ? 'lucro' : 'prejuizo',
-    observacoes: observacoes,
-    transacoes: transacoesTerreno
+  if (dataInicio) filtradas = filtradas.filter(t => t.data >= dataInicio);
+  if (dataFim) filtradas = filtradas.filter(t => t.data <= dataFim);
+  if (terrenoFiltro) filtradas = filtradas.filter(t => t.terreno === terrenoFiltro);
+
+  filtradas.sort((a, b) => a.data.localeCompare(b.data));
+
+  const agrupado = {};
+
+  filtradas.forEach(t => {
+    let chave;
+    if (periodo === 'dia') chave = t.data;
+    else if (periodo === 'mes') chave = t.data.substring(0, 7);
+    else chave = t.data.substring(0, 4);
+
+    if (!agrupado[chave]) agrupado[chave] = { entradas: 0, saidas: 0 };
+    if (t.tipo === 'entrada') agrupado[chave].entradas += t.valor;
+    else agrupado[chave].saidas += t.valor;
+  });
+
+  const chaves = Object.keys(agrupado).sort();
+  const entradasData = chaves.map(k => agrupado[k].entradas);
+  const saidasData = chaves.map(k => agrupado[k].saidas);
+  const totalEntradas = entradasData.reduce((a, b) => a + b, 0);
+  const totalSaidas = saidasData.reduce((a, b) => a + b, 0);
+
+  return {
+    labels: chaves,
+    entradasData,
+    saidasData,
+    totalEntradas,
+    totalSaidas,
+    saldo: totalEntradas - totalSaidas,
+    totalTransacoes: filtradas.length
   };
-  
-  historicoServicos.push(servicoFinalizado);
-  transacoes = transacoes.filter(t => t.terreno !== terrenoFinalizando);
-  
-  await salvarTudo();
-  
-  fecharModalFinalizar();
-  atualizarTudo();
-  
-  alert(`✅ Serviço do terreno "${terrenoFinalizando}" finalizado com sucesso!\n\n📊 Resultado: ${lucro >= 0 ? 'LUCRO' : 'PREJUÍZO'} de R$ ${Math.abs(lucro).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\nO terreno foi reiniciado e está pronto para um novo ciclo!`);
-  
-  terrenoFinalizando = null;
 }
 
-function fecharModalFinalizar() {
-  document.getElementById('modalFinalizar').classList.remove('show');
+function formatarMoeda(valor) {
+  return 'R$ ' + valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 }
 
-function verHistorico(terreno) {
-  const historicoTerreno = historicoServicos.filter(h => h.terreno === terreno).sort((a,b) => b.dataFinalizacao.localeCompare(a.dataFinalizacao));
-  
-  if (historicoTerreno.length === 0) {
-    document.getElementById('historicoConteudo').innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">📭 Nenhum serviço finalizado para este terreno ainda.</div>';
-  } else {
-    let html = '';
-    historicoTerreno.forEach((h) => {
-      html += `
-        <div class="historico-item">
-          <div class="data">📅 ${formatarData(h.dataFinalizacao)}</div>
-          <div class="resumo">
-            📈 Entradas: R$ ${h.totalEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br>
-            📉 Saídas: R$ ${h.totalSaidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br>
-            <strong style="color: ${h.resultado === 'lucro' ? '#4ade80' : '#f87171'}">
-              ${h.resultado === 'lucro' ? '✅ LUCRO' : '❌ PREJUÍZO'}: R$ ${Math.abs(h.lucro).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </strong>
-            ${h.observacoes ? `<br>📝 Obs: ${h.observacoes}` : ''}
-          </div>
-        </div>
-      `;
+function atualizarGrafico() {
+  const dados = obterDadosGrafico();
+  const ctx = document.getElementById('graficoFinanceiro').getContext('2d');
+
+  if (chartInstance) chartInstance.destroy();
+
+  // Atualizar resumo
+  document.getElementById('graficoTotalEntradas').textContent = formatarMoeda(dados.totalEntradas);
+  document.getElementById('graficoTotalSaidas').textContent = formatarMoeda(dados.totalSaidas);
+  const saldoEl = document.getElementById('graficoSaldo');
+  saldoEl.textContent = formatarMoeda(dados.saldo);
+  saldoEl.className = 'value ' + (dados.saldo >= 0 ? 'green' : 'red');
+  document.getElementById('graficoTotalTransacoes').textContent = dados.totalTransacoes;
+
+  const periodo = document.getElementById('graficoPeriodo').value;
+  const formatarLabel = (l) => {
+    if (l.length === 7) {
+      const [a, m] = l.split('-');
+      return `${m}/${a}`;
+    } else if (l.length === 4) return l;
+    const [a, m, d] = l.split('-');
+    return `${d}/${m}`;
+  };
+
+  const labels = dados.labels.map(formatarLabel);
+
+  if (dados.labels.length === 0) {
+    chartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Sem dados'],
+        datasets: [
+          { label: 'Entradas', data: [0], backgroundColor: 'rgba(16,185,129,0.5)', borderColor: '#10b981', borderWidth: 2 },
+          { label: 'Saídas', data: [0], backgroundColor: 'rgba(239,68,68,0.5)', borderColor: '#ef4444', borderWidth: 2 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: { color: '#94a3b8', font: { weight: '600' } }
+          }
+        },
+        scales: {
+          y: { beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.03)' } },
+          x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.03)' } }
+        }
+      }
     });
-    document.getElementById('historicoConteudo').innerHTML = html;
+    return;
   }
-  
-  document.getElementById('modalHistorico').classList.add('show');
-}
 
-function fecharModalHistorico() {
-  document.getElementById('modalHistorico').classList.remove('show');
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Entradas',
+          data: dados.entradasData,
+          backgroundColor: 'rgba(16,185,129,0.6)',
+          borderColor: '#10b981',
+          borderWidth: 2,
+          borderRadius: 4
+        },
+        {
+          label: 'Saídas',
+          data: dados.saidasData,
+          backgroundColor: 'rgba(239,68,68,0.6)',
+          borderColor: '#ef4444',
+          borderWidth: 2,
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: '#94a3b8',
+            font: { weight: '600' },
+            usePointStyle: true,
+            pointStyle: 'circle'
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return context.dataset.label + ': ' + formatarMoeda(context.raw);
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: '#94a3b8',
+            callback: function(value) {
+              return 'R$ ' + value.toLocaleString('pt-BR', { minimumFractionDigits: 0 });
+            }
+          },
+          grid: { color: 'rgba(255,255,255,0.03)' }
+        },
+        x: {
+          ticks: {
+            color: '#94a3b8',
+            maxRotation: 45,
+            minRotation: 0
+          },
+          grid: { color: 'rgba(255,255,255,0.03)' }
+        }
+      }
+    }
+  });
 }
 
 // ==================== FUNÇÕES DO SISTEMA ====================
 
-function adicionarTerreno() {
-  const nome = document.getElementById('novoTerrenoNome').value.trim();
-  if (!nome) {
-    alert('Digite o nome do terreno!');
-    return;
-  }
-  if (terrenos.includes(nome)) {
-    alert('Este terreno já existe!');
-    return;
-  }
-  terrenos.push(nome);
-  salvarTerrenosFirebase();
-  atualizarSelectTerrenos();
-  renderizarTerrenos();
-  document.getElementById('novoTerrenoNome').value = '';
-  alert(`✅ Terreno "${nome}" adicionado!`);
-}
-
-function abrirModalEditarTerreno(terrenoAntigo) {
-  document.getElementById('terrenoEditandoOriginal').value = terrenoAntigo;
-  document.getElementById('terrenoEditandoNome').value = terrenoAntigo;
-  document.getElementById('modalEditarTerreno').classList.add('show');
-}
-
-async function salvarEdicaoTerreno() {
-  const terrenoAntigo = document.getElementById('terrenoEditandoOriginal').value;
-  const terrenoNovo = document.getElementById('terrenoEditandoNome').value.trim();
-  
-  if (!terrenoNovo) {
-    alert('Digite o novo nome do terreno!');
-    return;
-  }
-  
-  if (terrenoNovo === terrenoAntigo) {
-    fecharModalEditarTerreno();
-    return;
-  }
-  
-  if (terrenos.includes(terrenoNovo)) {
-    alert('Já existe um terreno com este nome!');
-    return;
-  }
-  
-  transacoes = transacoes.map(t => {
-    if (t.terreno === terrenoAntigo) {
-      return { ...t, terreno: terrenoNovo };
-    }
-    return t;
-  });
-  
-  historicoServicos = historicoServicos.map(h => {
-    if (h.terreno === terrenoAntigo) {
-      return { ...h, terreno: terrenoNovo };
-    }
-    return h;
-  });
-  
-  const index = terrenos.indexOf(terrenoAntigo);
-  if (index !== -1) {
-    terrenos[index] = terrenoNovo;
-  }
-  
-  await salvarTudo();
-  atualizarSelectTerrenos();
-  renderizarTerrenos();
-  renderizarTabela();
-  fecharModalEditarTerreno();
-  alert(`✅ Terreno "${terrenoAntigo}" renomeado para "${terrenoNovo}"!`);
-}
-
-async function excluirTerreno(terreno) {
-  const transacoesAssociadas = transacoes.filter(t => t.terreno === terreno);
-  const historicoAssociado = historicoServicos.filter(h => h.terreno === terreno);
-  
-  let mensagem = `Tem certeza que deseja excluir o terreno "${terreno}"?`;
-  if (transacoesAssociadas.length > 0) {
-    mensagem += `\n\n⚠️ ATENÇÃO: Existem ${transacoesAssociadas.length} transações e ${historicoAssociado.length} registros de histórico associados a este terreno que também serão excluídos!`;
-  }
-  
-  if (!confirm(mensagem)) return;
-  
-  transacoes = transacoes.filter(t => t.terreno !== terreno);
-  historicoServicos = historicoServicos.filter(h => h.terreno !== terreno);
-  terrenos = terrenos.filter(t => t !== terreno);
-  
-  await salvarTudo();
-  
-  if (filtroTerreno === terreno) {
-    filtroTerreno = '';
-    document.getElementById('filtroTerreno').value = '';
-  }
-  
-  atualizarSelectTerrenos();
-  renderizarTerrenos();
-  renderizarTabela();
-  alert(`✅ Terreno "${terreno}" e todos os seus dados foram excluídos!`);
-}
-
-function fecharModalEditarTerreno() {
-  document.getElementById('modalEditarTerreno').classList.remove('show');
-}
-
-function atualizarSelectTerrenos() {
-  const selectTerreno = document.getElementById('terreno');
-  const filtroTerrenoSelect = document.getElementById('filtroTerreno');
-  
-  const options = '<option value="">Selecione um terreno</option>' + 
-    terrenos.map(t => `<option value="${t}">${t}</option>`).join('');
-  
-  if (selectTerreno) selectTerreno.innerHTML = options;
-  if (filtroTerrenoSelect) {
-    filtroTerrenoSelect.innerHTML = '<option value="">Todos os terrenos</option>' + 
-      terrenos.map(t => `<option value="${t}">${t}</option>`).join('');
-    filtroTerrenoSelect.value = filtroTerreno;
-  }
-}
-
 function calcularTotais() {
-  let totalEntradas = 0;
-  let totalSaidas = 0;
-  
+  let entradas = 0, saidas = 0;
   transacoes.forEach(t => {
-    if (t.tipo === 'entrada') {
-      totalEntradas += t.valor;
-    } else {
-      totalSaidas += t.valor;
-    }
+    if (t.tipo === 'entrada') entradas += t.valor;
+    else saidas += t.valor;
   });
-  
-  const saldo = totalEntradas - totalSaidas;
-  
-  document.getElementById('saldoTotal').innerHTML = `R$ ${saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-  document.getElementById('totalEntradas').innerHTML = `R$ ${totalEntradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-  document.getElementById('totalSaidas').innerHTML = `R$ ${totalSaidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-  
+  const saldo = entradas - saidas;
+
+  document.getElementById('saldoTotal').textContent = formatarMoeda(saldo);
+  document.getElementById('totalEntradas').textContent = formatarMoeda(entradas);
+  document.getElementById('totalSaidas').textContent = formatarMoeda(saidas);
+  document.getElementById('totalTerrenos').textContent = terrenos.length;
+
   const saldoEl = document.getElementById('saldoTotal');
-  saldoEl.style.color = saldo >= 0 ? '#4ade80' : '#f87171';
+  saldoEl.style.color = saldo >= 0 ? '#10b981' : '#ef4444';
 }
 
-function calcularTotaisPorTerreno() {
-  const totais = {};
-  
-  terrenos.forEach(terreno => {
-    totais[terreno] = { entradas: 0, saidas: 0, total: 0 };
-  });
-  
-  transacoes.forEach(t => {
-    if (totais[t.terreno]) {
-      if (t.tipo === 'entrada') {
-        totais[t.terreno].entradas += t.valor;
-      } else {
-        totais[t.terreno].saidas += t.valor;
-      }
-      totais[t.terreno].total = totais[t.terreno].entradas - totais[t.terreno].saidas;
+function atualizarSelects() {
+  const selects = ['terreno', 'filtroTerreno', 'graficoTerreno'];
+  const options = '<option value="">Selecione</option>' + terrenos.map(t => `<option value="${t}">${t}</option>`).join('');
+
+  selects.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      const val = el.value;
+      el.innerHTML = id === 'filtroTerreno' 
+        ? '<option value="">Todos</option>' + terrenos.map(t => `<option value="${t}">${t}</option>`).join('')
+        : options;
+      if (id === 'filtroTerreno') el.value = filtroTerreno;
+      else if (id === 'graficoTerreno' && val) el.value = val;
     }
   });
-  
-  return totais;
 }
-
-function renderizarTerrenos() {
-  const totais = calcularTotaisPorTerreno();
-  const grid = document.getElementById('terrenosGrid');
-  
-  if (terrenos.length === 0) {
-    grid.innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">Nenhum terreno cadastrado. Clique em "Novo Terreno" para começar!</div>';
-    return;
-  }
-  
-  grid.innerHTML = terrenos.map(terreno => {
-    const dados = totais[terreno];
-    const total = dados?.total || 0;
-    const entradas = dados?.entradas || 0;
-    const saidas = dados?.saidas || 0;
-    const temTransacoes = transacoes.some(t => t.terreno === terreno);
-    
-    return `
-      <div class="card-terreno">
-        <h3>
-          🏘️ ${terreno}
-          <div class="terreno-acoes">
-            <button class="btn-edit btn-small" onclick="abrirModalEditarTerreno('${terreno.replace(/'/g, "\\'")}')">✏️ Editar</button>
-            <button class="btn-delete btn-small" onclick="excluirTerreno('${terreno.replace(/'/g, "\\'")}')">🗑️ Excluir</button>
-          </div>
-        </h3>
-        <div class="total ${total >= 0 ? 'positivo' : 'negativo'}">
-          ${total >= 0 ? '+' : '-'} R$ ${Math.abs(total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-        </div>
-        <div class="detalhes">
-          <span>📈 Entradas: R$ ${entradas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-          <span>📉 Saídas: R$ ${saidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-        </div>
-        <div class="terreno-botoes">
-          <button class="btn-info btn-small" onclick="filtrarPorTerreno('${terreno.replace(/'/g, "\\'")}')">🔍 Ver transações</button>
-          <button class="btn-success btn-small" onclick="verHistorico('${terreno.replace(/'/g, "\\'")}')">📜 Ver Histórico</button>
-          ${temTransacoes ? `<button class="btn-warning btn-small" onclick="abrirModalFinalizar('${terreno.replace(/'/g, "\\'")}')">🏁 Finalizar serviço</button>` : '<span style="color: #666; font-size: 11px; padding: 8px;">✅ Sem transações ativas</span>'}
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-window.filtrarPorTerreno = function(terreno) {
-  filtroTerreno = terreno;
-  tabAtual = 'todas';
-  
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelector('.tab[data-tab="todas"]').classList.add('active');
-  
-  const filtroSelect = document.getElementById('filtroTerreno');
-  if (filtroSelect) filtroSelect.value = terreno;
-  
-  alternarTab('todas');
-  renderizarTabela();
-};
 
 function filtrarTransacoes() {
   let filtradas = [...transacoes];
-  
-  if (tabAtual === 'entradas') {
-    filtradas = filtradas.filter(t => t.tipo === 'entrada');
-  } else if (tabAtual === 'saidas') {
-    filtradas = filtradas.filter(t => t.tipo === 'saida');
-  }
-  
-  if (filtroMes) {
-    filtradas = filtradas.filter(t => t.data.startsWith(filtroMes));
-  }
-  
-  if (filtroCategoria) {
-    filtradas = filtradas.filter(t => t.categoria.toLowerCase().includes(filtroCategoria.toLowerCase()));
-  }
-  
-  if (filtroTerreno) {
-    filtradas = filtradas.filter(t => t.terreno === filtroTerreno);
-  }
-  
+
+  if (tabAtual === 'entradas') filtradas = filtradas.filter(t => t.tipo === 'entrada');
+  else if (tabAtual === 'saidas') filtradas = filtradas.filter(t => t.tipo === 'saida');
+
+  if (filtroMes) filtradas = filtradas.filter(t => t.data.startsWith(filtroMes));
+  if (filtroCategoria) filtradas = filtradas.filter(t => t.categoria.toLowerCase().includes(filtroCategoria.toLowerCase()));
+  if (filtroTerreno) filtradas = filtradas.filter(t => t.terreno === filtroTerreno);
+
   return filtradas;
 }
 
 function renderizarTabela() {
   const filtradas = filtrarTransacoes();
   const tbody = document.getElementById('listaTransacoes');
-  
+
   if (filtradas.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhuma transação encontrada</td>' + '</tr>';
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 40px;">
+      <i class="fa-regular fa-inbox" style="font-size: 20px; display: block; margin-bottom: 8px;"></i> Nenhuma transação encontrada
+    </td></tr>`;
     return;
   }
-  
+
   tbody.innerHTML = filtradas.map(t => `
     <tr>
       <td>${formatarData(t.data)}</td>
-      <td><span class="badge">${t.terreno}</span></td>
-      <td><span class="${t.tipo === 'entrada' ? 'entrada' : 'saida'}">${t.tipo === 'entrada' ? '📈 Entrada' : '📉 Saída'}</span></td>
+      <td><span class="badge-terreno">${t.terreno}</span></td>
+      <td><span class="${t.tipo === 'entrada' ? 'badge-entrada' : 'badge-saida'}">${t.tipo === 'entrada' ? '⬆ Entrada' : '⬇ Saída'}</span></td>
       <td>${t.categoria}</td>
       <td>${t.descricao}</td>
-      <td class="${t.tipo === 'entrada' ? 'entrada' : 'saida'}">${t.tipo === 'entrada' ? '+' : '-'} R$ ${t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-      <td class="acoes-linha">
-        <button class="btn-edit" onclick="editarTransacao(${t.id})">✏️</button>
-        <button class="btn-delete" onclick="deletarTransacao(${t.id})">🗑️</button>
+      <td style="font-weight: 600; color: ${t.tipo === 'entrada' ? 'var(--green)' : 'var(--red)'};">${t.tipo === 'entrada' ? '+' : '-'} ${formatarMoeda(t.valor)}</td>
+      <td>
+        <div class="actions-cell">
+          <button class="btn-action edit" onclick="editarTransacao(${t.id})"><i class="fa-regular fa-pen-to-square"></i></button>
+          <button class="btn-action delete" onclick="deletarTransacao(${t.id})"><i class="fa-regular fa-trash-can"></i></button>
+        </div>
       </td>
-     </tr>
+    </tr>
   `).join('');
+}
+
+function renderizarTerrenos() {
+  const grid = document.getElementById('terrenosGrid');
+  const totais = {};
+
+  terrenos.forEach(t => totais[t] = { entradas: 0, saidas: 0 });
+  transacoes.forEach(t => {
+    if (totais[t.terreno]) {
+      if (t.tipo === 'entrada') totais[t.terreno].entradas += t.valor;
+      else totais[t.terreno].saidas += t.valor;
+    }
+  });
+
+  if (terrenos.length === 0) {
+    grid.innerHTML = `
+      <div style="text-align:center; padding: 40px; color: var(--text-muted); grid-column: 1/-1;">
+        <i class="fa-solid fa-building" style="font-size: 28px; display: block; margin-bottom: 12px;"></i>
+        Nenhum terreno cadastrado<br>
+        <span style="font-size: 13px;">Clique em "Novo Terreno" para começar</span>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = terrenos.map(terreno => {
+    const d = totais[terreno] || { entradas: 0, saidas: 0 };
+    const total = d.entradas - d.saidas;
+    const temTransacoes = transacoes.some(t => t.terreno === terreno);
+
+    return `
+      <div class="card-terreno">
+        <div class="header">
+          <h3><i class="fa-solid fa-house-flag"></i> ${terreno}</h3>
+          <div style="display: flex; gap: 4px;">
+            <button class="btn-action edit" onclick="abrirModalEditarTerreno('${terreno.replace(/'/g, "\\'")}')"><i class="fa-regular fa-pen-to-square"></i></button>
+            <button class="btn-action delete" onclick="excluirTerreno('${terreno.replace(/'/g, "\\'")}')"><i class="fa-regular fa-trash-can"></i></button>
+          </div>
+        </div>
+        <div class="total ${total >= 0 ? 'green' : 'red'}">${total >= 0 ? '+' : '-'} ${formatarMoeda(Math.abs(total))}</div>
+        <div class="details">
+          <span>📈 ${formatarMoeda(d.entradas)}</span>
+          <span>📉 ${formatarMoeda(d.saidas)}</span>
+        </div>
+        <div class="actions">
+          <button class="btn btn-blue btn-sm" onclick="filtrarPorTerreno('${terreno.replace(/'/g, "\\'")}')"><i class="fa-regular fa-magnifying-glass"></i> Transações</button>
+          <button class="btn btn-outline btn-sm" onclick="verHistorico('${terreno.replace(/'/g, "\\'")}')"><i class="fa-regular fa-clock-rotate-left"></i> Histórico</button>
+          ${temTransacoes ? 
+            `<button class="btn btn-yellow btn-sm btn-full" onclick="abrirModalFinalizar('${terreno.replace(/'/g, "\\'")}')"><i class="fa-regular fa-circle-check"></i> Finalizar Serviço</button>` :
+            `<span style="grid-column: span 2; text-align:center; color: var(--text-muted); font-size: 12px; padding: 6px 0;"><i class="fa-regular fa-calendar-check"></i> Sem transações</span>`
+          }
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 function formatarData(dataStr) {
   if (!dataStr) return '';
-  const [ano, mes, dia] = dataStr.split('-');
-  return `${dia}/${mes}/${ano}`;
+  const [a, m, d] = dataStr.split('-');
+  return `${d}/${m}/${a}`;
 }
 
-window.editarTransacao = function(id) {
-  const transacao = transacoes.find(t => t.id == id);
-  if (transacao) {
-    editandoId = id;
-    document.getElementById('modalTitulo').innerText = '✏️ Editar Transação';
-    document.getElementById('transacaoId').value = transacao.id;
-    document.getElementById('data').value = transacao.data;
-    document.getElementById('terreno').value = transacao.terreno;
-    document.getElementById('tipo').value = transacao.tipo;
-    document.getElementById('categoria').value = transacao.categoria;
-    document.getElementById('descricao').value = transacao.descricao;
-    document.getElementById('valor').value = transacao.valor;
-    document.getElementById('observacoes').value = transacao.observacoes || '';
-    document.getElementById('modalTransacao').classList.add('show');
-  }
-};
+function alternarTab(tab) {
+  tabAtual = tab;
 
-window.deletarTransacao = async function(id) {
-  if (confirm('Tem certeza que deseja excluir esta transação?')) {
-    transacoes = transacoes.filter(t => t.id != id);
-    await salvarTransacoesFirebase();
-    atualizarTudo();
-    alert('✅ Transação excluída!');
-  }
-};
+  document.getElementById('tabelaContainer').style.display = 'none';
+  document.getElementById('graficoContainer').style.display = 'none';
+  document.getElementById('terrenosContainer').style.display = 'none';
+  document.getElementById('filtersContainer').style.display = 'flex';
 
-async function salvarTransacao() {
-  const id = document.getElementById('transacaoId').value;
-  const data = document.getElementById('data').value;
-  const terreno = document.getElementById('terreno').value;
-  const tipo = document.getElementById('tipo').value;
-  const categoria = document.getElementById('categoria').value;
-  const descricao = document.getElementById('descricao').value;
-  const valor = parseFloat(document.getElementById('valor').value);
-  const observacoes = document.getElementById('observacoes').value;
-  
-  if (!data || !terreno || !descricao || isNaN(valor) || valor <= 0) {
-    alert('Preencha todos os campos obrigatórios!');
-    return;
-  }
-  
-  if (id) {
-    const index = transacoes.findIndex(t => t.id == id);
-    if (index !== -1) {
-      transacoes[index] = { ...transacoes[index], data, terreno, tipo, categoria, descricao, valor, observacoes };
+  // Mostrar/esconder filtros
+  document.querySelectorAll('#filtersContainer .filter-group').forEach((g, i) => {
+    if (tab === 'grafico') {
+      g.style.display = 'none';
+    } else {
+      g.style.display = 'flex';
     }
+  });
+
+  if (tab === 'grafico') {
+    document.getElementById('graficoContainer').style.display = 'block';
+    document.querySelectorAll('.filtros-grafico').forEach(el => el.style.display = '');
+    setTimeout(atualizarGrafico, 100);
+  } else if (tab === 'terrenos') {
+    document.getElementById('terrenosContainer').style.display = 'block';
+    document.getElementById('filtersContainer').style.display = 'none';
+    renderizarTerrenos();
   } else {
-    transacoes.push({
-      id: Date.now(),
-      data,
-      terreno,
-      tipo,
-      categoria,
-      descricao,
-      valor,
-      observacoes
-    });
+    document.getElementById('tabelaContainer').style.display = 'block';
+    renderizarTabela();
   }
-  
-  transacoes.sort((a,b) => b.data.localeCompare(a.data));
-  await salvarTransacoesFirebase();
-  atualizarTudo();
-  fecharModal();
-  alert('✅ Transação salva!');
 }
 
+function atualizarTudo() {
+  calcularTotais();
+  atualizarSelects();
+  if (tabAtual === 'grafico') atualizarGrafico();
+  else if (tabAtual === 'terrenos') renderizarTerrenos();
+  else renderizarTabela();
+}
+
+window.filtrarPorTerreno = function(terreno) {
+  filtroTerreno = terreno;
+  tabAtual = 'todas';
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.tab[data-tab="todas"]').classList.add('active');
+  document.getElementById('filtroTerreno').value = terreno;
+  alternarTab('todas');
+  renderizarTabela();
+};
+
+// ==================== TRANSAÇÕES ====================
 function abrirModal(tipo = 'entrada') {
   editandoId = null;
-  atualizarSelectTerrenos();
-  
-  document.getElementById('modalTitulo').innerText = tipo === 'entrada' ? '➕ Nova Entrada' : '➖ Nova Saída';
+  atualizarSelects();
+  document.getElementById('modalTitulo').textContent = tipo === 'entrada' ? '➕ Nova Entrada' : '➖ Nova Saída';
   document.getElementById('transacaoId').value = '';
   document.getElementById('data').value = new Date().toISOString().split('T')[0];
   document.getElementById('terreno').value = '';
@@ -1475,22 +1728,209 @@ function fecharModal() {
   editandoId = null;
 }
 
+window.editarTransacao = function(id) {
+  const t = transacoes.find(x => x.id === id);
+  if (!t) return;
+  editandoId = id;
+  atualizarSelects();
+  document.getElementById('modalTitulo').textContent = '✏️ Editar Transação';
+  document.getElementById('transacaoId').value = t.id;
+  document.getElementById('data').value = t.data;
+  document.getElementById('terreno').value = t.terreno;
+  document.getElementById('tipo').value = t.tipo;
+  document.getElementById('categoria').value = t.categoria;
+  document.getElementById('descricao').value = t.descricao;
+  document.getElementById('valor').value = t.valor;
+  document.getElementById('observacoes').value = t.observacoes || '';
+  document.getElementById('modalTransacao').classList.add('show');
+};
+
+window.deletarTransacao = async function(id) {
+  if (!confirm('Tem certeza que deseja excluir esta transação?')) return;
+  transacoes = transacoes.filter(t => t.id !== id);
+  await salvarTransacoesFirebase();
+  atualizarTudo();
+};
+
+async function salvarTransacao() {
+  const id = document.getElementById('transacaoId').value;
+  const data = document.getElementById('data').value;
+  const terreno = document.getElementById('terreno').value;
+  const tipo = document.getElementById('tipo').value;
+  const categoria = document.getElementById('categoria').value;
+  const descricao = document.getElementById('descricao').value;
+  const valor = parseFloat(document.getElementById('valor').value);
+  const observacoes = document.getElementById('observacoes').value;
+
+  if (!data || !terreno || !descricao || isNaN(valor) || valor <= 0) {
+    alert('Preencha todos os campos obrigatórios!');
+    return;
+  }
+
+  if (id) {
+    const idx = transacoes.findIndex(t => t.id === parseInt(id));
+    if (idx !== -1) transacoes[idx] = { ...transacoes[idx], data, terreno, tipo, categoria, descricao, valor, observacoes };
+  } else {
+    transacoes.push({ id: Date.now(), data, terreno, tipo, categoria, descricao, valor, observacoes });
+  }
+
+  transacoes.sort((a, b) => b.data.localeCompare(a.data));
+  await salvarTransacoesFirebase();
+  atualizarTudo();
+  fecharModal();
+}
+
+// ==================== TERRENOS ====================
+function adicionarTerreno() {
+  const nome = document.getElementById('novoTerrenoNome').value.trim();
+  if (!nome) { alert('Digite o nome do terreno!'); return; }
+  if (terrenos.includes(nome)) { alert('Este terreno já existe!'); return; }
+  terrenos.push(nome);
+  salvarTerrenosFirebase();
+  document.getElementById('novoTerrenoNome').value = '';
+  atualizarTudo();
+}
+
+function abrirModalEditarTerreno(terrenoAntigo) {
+  document.getElementById('terrenoEditandoOriginal').value = terrenoAntigo;
+  document.getElementById('terrenoEditandoNome').value = terrenoAntigo;
+  document.getElementById('modalEditarTerreno').classList.add('show');
+}
+
+function fecharModalEditarTerreno() {
+  document.getElementById('modalEditarTerreno').classList.remove('show');
+}
+
+async function salvarEdicaoTerreno() {
+  const antigo = document.getElementById('terrenoEditandoOriginal').value;
+  const novo = document.getElementById('terrenoEditandoNome').value.trim();
+  if (!novo) { alert('Digite o novo nome!'); return; }
+  if (novo === antigo) { fecharModalEditarTerreno(); return; }
+  if (terrenos.includes(novo)) { alert('Já existe um terreno com este nome!'); return; }
+
+  transacoes = transacoes.map(t => t.terreno === antigo ? { ...t, terreno: novo } : t);
+  historicoServicos = historicoServicos.map(h => h.terreno === antigo ? { ...h, terreno: novo } : h);
+  const idx = terrenos.indexOf(antigo);
+  if (idx !== -1) terrenos[idx] = novo;
+
+  await salvarTudo();
+  atualizarTudo();
+  fecharModalEditarTerreno();
+}
+
+async function excluirTerreno(terreno) {
+  const count = transacoes.filter(t => t.terreno === terreno).length;
+  const histCount = historicoServicos.filter(h => h.terreno === terreno).length;
+  let msg = `Tem certeza que deseja excluir o terreno "${terreno}"?`;
+  if (count > 0) msg += `\n\n⚠️ ${count} transações e ${histCount} registros de histórico serão excluídos!`;
+  if (!confirm(msg)) return;
+
+  transacoes = transacoes.filter(t => t.terreno !== terreno);
+  historicoServicos = historicoServicos.filter(h => h.terreno !== terreno);
+  terrenos = terrenos.filter(t => t !== terreno);
+  if (filtroTerreno === terreno) filtroTerreno = '';
+
+  await salvarTudo();
+  atualizarTudo();
+}
+
+// ==================== FINALIZAR SERVIÇO ====================
+function abrirModalFinalizar(terreno) {
+  terrenoFinalizando = terreno;
+  const ts = transacoes.filter(t => t.terreno === terreno);
+  const entradas = ts.filter(t => t.tipo === 'entrada').reduce((s, t) => s + t.valor, 0);
+  const saidas = ts.filter(t => t.tipo === 'saida').reduce((s, t) => s + t.valor, 0);
+  const lucro = entradas - saidas;
+
+  document.getElementById('finalizarResumo').innerHTML = `
+    <div class="finalizar-resumo">
+      <h4>📊 Resumo - ${terreno}</h4>
+      <div class="row"><span>📈 Entradas</span><span style="color: var(--green);">${formatarMoeda(entradas)}</span></div>
+      <div class="row"><span>📉 Saídas</span><span style="color: var(--red);">${formatarMoeda(saidas)}</span></div>
+      <div class="total ${lucro >= 0 ? 'green' : 'red'}">${lucro >= 0 ? '✅ LUCRO' : '❌ PREJUÍZO'} ${formatarMoeda(Math.abs(lucro))}</div>
+    </div>
+  `;
+  document.getElementById('observacoesFinais').value = '';
+  document.getElementById('modalFinalizar').classList.add('show');
+}
+
+function fecharModalFinalizar() {
+  document.getElementById('modalFinalizar').classList.remove('show');
+  terrenoFinalizando = null;
+}
+
+async function confirmarFinalizar() {
+  if (!terrenoFinalizando) return;
+  const obs = document.getElementById('observacoesFinais').value;
+  const ts = transacoes.filter(t => t.terreno === terrenoFinalizando);
+  const entradas = ts.filter(t => t.tipo === 'entrada').reduce((s, t) => s + t.valor, 0);
+  const saidas = ts.filter(t => t.tipo === 'saida').reduce((s, t) => s + t.valor, 0);
+  const lucro = entradas - saidas;
+
+  historicoServicos.push({
+    id: Date.now(),
+    terreno: terrenoFinalizando,
+    dataFinalizacao: new Date().toISOString().split('T')[0],
+    totalEntradas: entradas,
+    totalSaidas: saidas,
+    lucro: lucro,
+    resultado: lucro >= 0 ? 'lucro' : 'prejuizo',
+    observacoes: obs,
+    transacoes: ts
+  });
+
+  transacoes = transacoes.filter(t => t.terreno !== terrenoFinalizando);
+  await salvarTudo();
+  fecharModalFinalizar();
+  atualizarTudo();
+  alert(`✅ Serviço "${terrenoFinalizando}" finalizado!\nResultado: ${lucro >= 0 ? 'LUCRO' : 'PREJUÍZO'} de ${formatarMoeda(Math.abs(lucro))}`);
+}
+
+// ==================== HISTÓRICO ====================
+function verHistorico(terreno) {
+  const hist = historicoServicos.filter(h => h.terreno === terreno).sort((a,b) => b.dataFinalizacao.localeCompare(a.dataFinalizacao));
+
+  if (hist.length === 0) {
+    document.getElementById('historicoConteudo').innerHTML = `
+      <div style="text-align:center; padding: 40px; color: var(--text-muted);">
+        <i class="fa-regular fa-folder-open" style="font-size: 28px; display: block; margin-bottom: 12px;"></i>
+        Nenhum serviço finalizado para este terreno
+      </div>
+    `;
+  } else {
+    document.getElementById('historicoConteudo').innerHTML = hist.map(h => `
+      <div class="historico-item">
+        <div class="date"><i class="fa-regular fa-calendar"></i> ${formatarData(h.dataFinalizacao)}</div>
+        <div class="content">
+          📈 Entradas: ${formatarMoeda(h.totalEntradas)}<br>
+          📉 Saídas: ${formatarMoeda(h.totalSaidas)}<br>
+          <strong style="color: ${h.resultado === 'lucro' ? 'var(--green)' : 'var(--red)'};">${h.resultado === 'lucro' ? '✅ LUCRO' : '❌ PREJUÍZO'}: ${formatarMoeda(Math.abs(h.lucro))}</strong>
+          ${h.observacoes ? `<br>📝 ${h.observacoes}` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('modalHistorico').classList.add('show');
+}
+
+function fecharModalHistorico() {
+  document.getElementById('modalHistorico').classList.remove('show');
+}
+
+// ==================== EXPORTAR ====================
 function exportarCSV() {
+  if (transacoes.length === 0) { alert('Nenhuma transação para exportar!'); return; }
   let csv = 'Data,Terreno,Tipo,Categoria,Descrição,Valor,Observações\n';
-  
   transacoes.forEach(t => {
     csv += `"${t.data}","${t.terreno}","${t.tipo === 'entrada' ? 'Entrada' : 'Saída'}","${t.categoria}","${t.descricao}",${t.valor},"${t.observacoes || ''}"\n`;
   });
-  
   const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.href = url;
-  link.setAttribute('download', `financas_${new Date().toISOString().split('T')[0]}.csv`);
-  document.body.appendChild(link);
+  link.href = URL.createObjectURL(blob);
+  link.download = `financas_${new Date().toISOString().split('T')[0]}.csv`;
   link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  URL.revokeObjectURL(link.href);
 }
 
 function limparFiltros() {
@@ -1503,42 +1943,34 @@ function limparFiltros() {
   renderizarTabela();
 }
 
-function alternarTab(tab) {
-  tabAtual = tab;
-  
-  const tabelaContainer = document.getElementById('tabelaContainer');
-  const terrenosContainer = document.getElementById('terrenosContainer');
-  const filtrosContainer = document.getElementById('filtrosContainer');
-  
-  if (tab === 'terrenos') {
-    tabelaContainer.style.display = 'none';
-    terrenosContainer.style.display = 'block';
-    filtrosContainer.style.display = 'none';
-    renderizarTerrenos();
-  } else {
-    tabelaContainer.style.display = 'block';
-    terrenosContainer.style.display = 'none';
-    filtrosContainer.style.display = 'flex';
-    renderizarTabela();
-  }
-}
+// ==================== CONFIGURAR MÊS ATUAL NO GRÁFICO ====================
+function configurarMesAtual() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+  const mesAtual = `${ano}-${mes}`;
 
-function atualizarTudo() {
-  calcularTotais();
-  atualizarSelectTerrenos();
-  
-  if (tabAtual === 'terrenos') {
-    renderizarTerrenos();
-  } else {
-    renderizarTabela();
-  }
+  // Configurar filtro de mês da tabela
+  document.getElementById('filtroMes').value = mesAtual;
+  filtroMes = mesAtual;
+
+  // Configurar datas do gráfico para o mês atual
+  const primeiroDia = `${ano}-${mes}-01`;
+  const ultimoDia = new Date(ano, hoje.getMonth() + 1, 0);
+  const ultimoDiaStr = `${ano}-${mes}-${String(ultimoDia.getDate()).padStart(2, '0')}`;
+
+  document.getElementById('graficoDataInicio').value = primeiroDia;
+  document.getElementById('graficoDataFim').value = ultimoDiaStr;
 }
 
 // ==================== EVENTOS ====================
 document.getElementById('btnNovaEntrada').addEventListener('click', () => abrirModal('entrada'));
 document.getElementById('btnNovaSaida').addEventListener('click', () => abrirModal('saida'));
 document.getElementById('btnNovoTerreno').addEventListener('click', () => {
-  document.querySelector('.tab[data-tab="terrenos"]').click();
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.tab[data-tab="terrenos"]').classList.add('active');
+  alternarTab('terrenos');
+  document.getElementById('novoTerrenoNome').focus();
 });
 document.getElementById('btnAdicionarTerreno').addEventListener('click', adicionarTerreno);
 document.getElementById('btnExportar').addEventListener('click', exportarCSV);
@@ -1554,6 +1986,7 @@ document.getElementById('btnCancelarFinalizar').addEventListener('click', fechar
 document.getElementById('closeFinalizarBtn').addEventListener('click', fecharModalFinalizar);
 document.getElementById('btnFecharHistorico').addEventListener('click', fecharModalHistorico);
 document.getElementById('closeHistoricoBtn').addEventListener('click', fecharModalHistorico);
+document.getElementById('btnAtualizarGrafico').addEventListener('click', atualizarGrafico);
 
 document.getElementById('filtroMes').addEventListener('change', (e) => {
   filtroMes = e.target.value;
@@ -1570,6 +2003,7 @@ document.getElementById('filtroTerreno').addEventListener('change', (e) => {
   renderizarTabela();
 });
 
+// Tabs
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -1578,21 +2012,25 @@ document.querySelectorAll('.tab').forEach(tab => {
   });
 });
 
-window.addEventListener('click', (e) => {
-  const modalTransacao = document.getElementById('modalTransacao');
-  const modalEditarTerreno = document.getElementById('modalEditarTerreno');
-  const modalFinalizar = document.getElementById('modalFinalizar');
-  const modalHistorico = document.getElementById('modalHistorico');
-  
-  if (e.target === modalTransacao) fecharModal();
-  if (e.target === modalEditarTerreno) fecharModalEditarTerreno();
-  if (e.target === modalFinalizar) fecharModalFinalizar();
-  if (e.target === modalHistorico) fecharModalHistorico();
+// Fechar modais clicando fora
+document.querySelectorAll('.modal').forEach(modal => {
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.classList.remove('show');
+    }
+  });
+});
+
+// Enter para adicionar terreno
+document.getElementById('novoTerrenoNome').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') adicionarTerreno();
 });
 
 // ==================== INICIAR ====================
+configurarMesAtual();
 carregarTodosDados();
-console.log('✅ Sistema Financeiro com Firebase - Finalização de Serviço!');
+
+console.log('✅ Alfa Finance - Aba de gráfico como primeira aba!');
 </script>
 </body>
 </html>
